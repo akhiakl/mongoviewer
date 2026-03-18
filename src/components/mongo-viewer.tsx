@@ -13,6 +13,7 @@ import { SidebarInset, SidebarProvider } from "./ui/sidebar"
 type MongoViewerClientProps = {
     activeConnectionId: string | null
     activeConnectionName: string | null
+    onBack?: () => void
 }
 
 function pickSelection(tree: DatabaseTreeItem[], current: Selection | null) {
@@ -35,7 +36,7 @@ function pickSelection(tree: DatabaseTreeItem[], current: Selection | null) {
     return null
 }
 
-export function MongoViewerClient({ activeConnectionId, activeConnectionName }: MongoViewerClientProps) {
+export function MongoViewerClient({ activeConnectionId, activeConnectionName, onBack }: MongoViewerClientProps) {
     const [selection, setSelection] = useState<Selection | null>(null)
     const [page, setPage] = useState(1)
     const [viewMode, setViewMode] = useState<ViewMode>("table")
@@ -75,6 +76,17 @@ export function MongoViewerClient({ activeConnectionId, activeConnectionName }: 
                 <SidebarInset>
                     <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-4 py-3 md:px-6">
                         <div>
+                            {onBack ? (
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="mb-2"
+                                    onClick={onBack}
+                                >
+                                    <ArrowLeft className="size-4" />
+                                    Connections
+                                </Button>
+                            ) : null}
                             <p className="text-xs uppercase tracking-[0.16em] text-slate-500">Collection</p>
                             <h1 className="text-lg font-semibold text-slate-800 md:text-xl">
                                 {selection ? `${selection.db} / ${selection.collection}` : "Pick a collection"}

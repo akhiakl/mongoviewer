@@ -1,4 +1,5 @@
 import { Database } from 'lucide-react'
+import Menu from './menu'
 
 // WebkitAppRegion is not in React.CSSProperties — extend it locally
 type AppRegionStyle = React.CSSProperties & { WebkitAppRegion?: 'drag' | 'no-drag' }
@@ -23,22 +24,27 @@ export function TitleBar({ platform, subtitle }: TitleBarProps) {
     const dragStyle: AppRegionStyle = { WebkitAppRegion: 'drag' }
 
     return (
-        <div
-            className="flex h-10 shrink-0 items-center border-b border-black/[0.06] bg-[#f5f3ef]"
-            style={dragStyle}
-        >
-            <div className={`flex items-center gap-2 text-sm ${isMac ? 'pl-[76px]' : 'pl-4'}`}>
-                <Database className="size-3.5 shrink-0 text-slate-500" />
-                <span className="select-none font-semibold tracking-tight text-slate-700">
-                    Mongo Viewer
-                </span>
-                {subtitle && (
-                    <>
-                        <span className="text-slate-400" aria-hidden>·</span>
-                        <span className="max-w-[200px] truncate text-slate-500">{subtitle}</span>
-                    </>
-                )}
+        <div className="flex">
+            <div
+                className="flex h-10 shrink-0 items-center border-b border-black/6 bg-[#f5f3ef]"
+                style={dragStyle}
+            >
+                <div className={`flex items-center gap-2 text-sm ${isMac ? 'pl-19' : 'pl-4'}`}>
+                    <Database className="size-3.5 shrink-0 text-slate-500" />
+                    <span className="select-none font-semibold tracking-tight text-slate-700">
+                        Mongo Viewer
+                    </span>
+                    <Menu />
+                </div>
             </div>
+            {
+                subtitle && (
+                    <div className="flex h-6 shrink-0 items-center border-b border-black/6 bg-[#f5f3ef] px-4 text-sm text-slate-500">
+                        <span className="text-slate-400" aria-hidden>·</span>
+                        <span className="max-w-50 truncate text-slate-500">{subtitle}</span>
+                    </div>
+                )
+            }
         </div>
     )
 }

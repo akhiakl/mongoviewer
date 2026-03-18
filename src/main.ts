@@ -113,19 +113,16 @@ const createWindow = () => {
     height: 720,
     minWidth: 840,
     minHeight: 620,
-    // Remove the default OS title bar and expose our custom one
+    // Hide the default title bar but keep native window controls.
     titleBarStyle: 'hidden',
-    // On macOS the traffic lights remain; position them to sit inside our 40px title bar
-    ...(process.platform === 'darwin'
-      ? { trafficLightPosition: { x: 12, y: 12 } }
-      : {
-        // On Windows/Linux, render native window controls over our title bar
+    ...(process.platform !== 'darwin'
+      ? {
+        // Show native controls on Windows/Linux while keeping custom content area.
         titleBarOverlay: {
-          color: '#f5f3ef',
-          symbolColor: '#475569',
           height: 40,
         },
-      }),
+      }
+      : {}),
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
     },

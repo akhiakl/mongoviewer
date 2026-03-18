@@ -11,9 +11,6 @@ type View = 'connections' | 'viewer';
 
 const { platform } = mongoViewer;
 
-const bgGradient =
-  'bg-[radial-gradient(circle_at_top_right,rgba(56,189,248,0.18),transparent_24%),radial-gradient(circle_at_bottom_left,rgba(245,158,11,0.14),transparent_30%),linear-gradient(180deg,#f5f3ef_0%,#ebe6dd_100%)]';
-
 export default function App() {
   const [view, setView] = useState<View>('connections');
 
@@ -46,7 +43,7 @@ export default function App() {
     <TooltipProvider>
       <div className="flex h-screen flex-col overflow-hidden">
         <TitleBar platform={platform} subtitle={subtitle} />
-        <div className={`flex-1 overflow-hidden ${bgGradient} p-4 md:p-6`}>
+        <div className={`flex-1 overflow-hidden p-4 md:p-6`}>
           {view === 'viewer' && connectionsState.activeConnectionId ? (
             <MongoViewerClient
               activeConnectionId={connectionsState.activeConnectionId}
