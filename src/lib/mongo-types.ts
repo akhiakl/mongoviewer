@@ -1,0 +1,42 @@
+export type ConnectionListItem = {
+  id: string;
+  name: string;
+  createdAt: string;
+};
+
+export type ConnectionsState = {
+  connections: ConnectionListItem[];
+  activeConnectionId: string | null;
+};
+
+export type SaveConnectionInput = {
+  name: string;
+  connectionString: string;
+  tlsCertificatePath?: string;
+};
+
+export type DatabaseTreeItem = {
+  name: string;
+  collections: string[];
+};
+
+export type Selection = {
+  db: string;
+  collection: string;
+};
+
+export type DocumentsQuery = Selection & {
+  page?: number;
+  pageSize?: number;
+};
+
+export type SerializableRecord = Record<string, unknown>;
+
+export type DocumentsResult = {
+  db: string;
+  collection: string;
+  page: number;
+  pageSize: number;
+  total: number;
+  records: SerializableRecord[];
+};
