@@ -2,7 +2,8 @@ import type { CSSProperties } from "react"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { List, type ListImperativeAPI, type RowComponentProps } from "react-window"
 
-import { formatCellValue } from "@/lib/document-format"
+import { JsonValueInspector } from "@/components/mongo-viewer/json-value-viewer"
+import { formatCellTooltip, formatCellValue, formatEjsonScalar } from "@/lib/document-format"
 
 type RecordsTableProps = {
     records: Record<string, unknown>[]
@@ -13,6 +14,7 @@ const MIN_COLUMN_WIDTH = 140
 type RecordRowProps = {
     columns: string[]
     columnWidths: Record<string, number>
+    onInspectCell: (fieldName: string, rowIndex: number) => void
     records: Record<string, unknown>[]
     gridTemplateColumns: string
 }
@@ -69,7 +71,19 @@ function getDefaultColumnWidth(column: string, type: string) {
     return 180
 }
 
-function RecordRow({ columns, gridTemplateColumns, index, records, style }: RowComponentProps<RecordRowProps>) {
+function isInspectableValue(value: unknown) {
+    if (Array.isArray(value)) {
+        return true
+    }
+
+    if (typeof value === "object" && value !== null) {
+        return formatEjsonScalar(value as Record<string, unknown>) === null
+    }
+
+    return false
+}
+
+function RecordRow({ columns, gridTemplateColumns, index, onInspectCell, records, style }: RowComponentProps<RecordRowProps>) {
     const record = records[index]
 
     return (
@@ -83,13 +97,33 @@ function RecordRow({ columns, gridTemplateColumns, index, records, style }: RowC
             }}
         >
             {columns.map((column) => (
-                <div
-                    key={`${index}-${column}`}
-                    role="cell"
-                    className="flex h-full min-w-0 self-stretch border-r border-border px-2 py-2 text-xs text-foreground last:border-r-0"
-                >
-                    <div className="line-clamp-3 break-all">{formatCellValue(record[column])}</div>
-                </div>
+                isInspectableValue(record[column]) ? (
+                    <button
+                        key={`${index}-${column}`}
+                        type="button"
+                        role="cell"
+                        aria-label={`Inspect ${column} value`}
+                        title={formatCellTooltip(record[column])}
+                        className="flex h-full min-w-0 cursor-zoom-in items-start justify-between gap-2 self-stretch border-r border-border px-2 py-2 text-left text-xs text-foreground transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring last:border-r-0"
+                        onClick={() => onInspectCell(column, index)}
+                    >
+                        <div className="line-clamp-2 min-w-0 flex-1 break-words text-[12px] leading-5">
+                            {formatCellValue(record[column])}
+                        </div>
+                        <span className="shrink-0 rounded border border-border bg-muted px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
+                            Inspect
+                        </span>
+                    </button>
+                ) : (
+                    <div
+                        key={`${index}-${column}`}
+                        role="cell"
+                        title={formatCellTooltip(record[column])}
+                        className="flex h-full min-w-0 self-stretch border-r border-border px-2 py-2 text-xs text-foreground last:border-r-0"
+                    >
+                        <div className="line-clamp-2 break-words text-[12px] leading-5">{formatCellValue(record[column])}</div>
+                    </div>
+                )
             ))}
         </div>
     )
@@ -99,6 +133,7 @@ export function RecordsTable({ records }: RecordsTableProps) {
     const viewportRef = useRef<HTMLDivElement | null>(null)
     const listRef = useRef<ListImperativeAPI | null>(null)
     const resizeStateRef = useRef<{ column: string; startWidth: number; startX: number } | null>(null)
+    const [inspectedCell, setInspectedCell] = useState<{ column: string; rowIndex: number } | null>(null)
     const columns = useMemo(() => {
         const keys = new Set<string>()
         for (const record of records) {
@@ -227,49 +262,75 @@ export function RecordsTable({ records }: RecordsTableProps) {
         window.addEventListener("pointerup", handlePointerUp)
     }
 
+    const inspectedRecord = inspectedCell ? records[inspectedCell.rowIndex] : null
+    const inspectedValue = inspectedCell && inspectedRecord ? inspectedRecord[inspectedCell.column] : null
+    const inspectedRecordId =
+        inspectedCell && inspectedRecord && "_id" in inspectedRecord ? formatCellValue(inspectedRecord._id) : undefined
+
     return (
-        <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-md border border-border">
-            <div className="h-full overflow-x-auto overflow-y-hidden">
-                <div className="flex h-full flex-col" style={{ minWidth: minTableWidth }}>
-                    <div
-                        role="row"
-                        className="grid border-b border-border bg-muted/40"
-                        style={{ gridTemplateColumns, paddingRight: scrollbarWidth }}
-                    >
-                        {columns.map((column) => (
-                            <div
-                                key={column}
-                                role="columnheader"
-                                className="relative min-w-0 border-r border-border px-2 py-2 last:border-r-0"
-                            >
-                                <div className="text-xs font-semibold tracking-wide text-foreground">{column}</div>
-                                <div className="mt-1 text-[11px] font-medium tracking-[0.12em] text-muted-foreground">
-                                    {columnTypes[column]}
-                                </div>
+        <>
+            <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-md border border-border">
+                <div className="h-full overflow-x-auto overflow-y-hidden">
+                    <div className="flex h-full flex-col" style={{ minWidth: minTableWidth }}>
+                        <div
+                            role="row"
+                            className="grid border-b border-border bg-muted/40"
+                            style={{ gridTemplateColumns, paddingRight: scrollbarWidth }}
+                        >
+                            {columns.map((column) => (
                                 <div
-                                    role="separator"
-                                    aria-orientation="vertical"
-                                    aria-label={`Resize ${column} column`}
-                                    className="absolute top-0 right-0 h-full w-2 cursor-col-resize touch-none select-none"
-                                    onPointerDown={(event) => startResize(event, column)}
-                                />
-                            </div>
-                        ))}
-                    </div>
-                    <div ref={viewportRef} className="min-h-0 flex-1">
-                        <List
-                            listRef={listRef}
-                            rowComponent={RecordRow}
-                            rowCount={records.length}
-                            rowHeight={rowHeight}
-                            rowProps={{ columnWidths, columns, gridTemplateColumns, records }}
-                            overscanCount={8}
-                            className="overflow-x-hidden bg-background"
-                            style={listStyle}
-                        />
+                                    key={column}
+                                    role="columnheader"
+                                    className="relative min-w-0 border-r border-border px-2 py-2 last:border-r-0"
+                                >
+                                    <div className="text-xs font-semibold tracking-wide text-foreground">{column}</div>
+                                    <div className="mt-1 text-[11px] font-medium tracking-[0.12em] text-muted-foreground">
+                                        {columnTypes[column]}
+                                    </div>
+                                    <div
+                                        role="separator"
+                                        aria-orientation="vertical"
+                                        aria-label={`Resize ${column} column`}
+                                        className="absolute top-0 right-0 h-full w-2 cursor-col-resize touch-none select-none"
+                                        onPointerDown={(event) => startResize(event, column)}
+                                    />
+                                </div>
+                            ))}
+                        </div>
+                        <div ref={viewportRef} className="min-h-0 flex-1">
+                            <List
+                                listRef={listRef}
+                                rowComponent={RecordRow}
+                                rowCount={records.length}
+                                rowHeight={rowHeight}
+                                rowProps={{
+                                    columnWidths,
+                                    columns,
+                                    gridTemplateColumns,
+                                    onInspectCell: (column, rowIndex) => setInspectedCell({ column, rowIndex }),
+                                    records,
+                                }}
+                                overscanCount={8}
+                                className="overflow-x-hidden bg-background"
+                                style={listStyle}
+                            />
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
+            {inspectedCell && inspectedValue !== null ? (
+                <JsonValueInspector
+                    fieldName={inspectedCell.column}
+                    open={true}
+                    onOpenChange={(open) => {
+                        if (!open) {
+                            setInspectedCell(null)
+                        }
+                    }}
+                    recordId={inspectedRecordId}
+                    value={inspectedValue}
+                />
+            ) : null}
+        </>
     )
 }

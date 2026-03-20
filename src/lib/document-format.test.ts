@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+    formatCellTooltip,
     formatCellValue,
     formatEjsonScalar,
     getRecordId,
@@ -35,10 +36,22 @@ describe('document-format', () => {
         expect(formatCellValue('plain')).toBe('plain');
         expect(formatCellValue(10)).toBe('10');
         expect(formatCellValue(true)).toBe('true');
-        expect(formatCellValue(['a', 1])).toBe('["a",1]');
+        expect(formatCellValue(['a', 1])).toBe('[a, 1]');
+        expect(formatCellValue(['a', 1, false, null])).toBe('[a, 1, …]');
+        expect(formatCellValue([{ nested: true }])).toBe('[1 items]');
         expect(formatCellValue({ $oid: 'abc' })).toBe('abc');
-        expect(formatCellValue({ nested: { a: 1 } })).toBe('{"nested":{"a":1}}');
+        expect(formatCellValue({ nested: { a: 1 } })).toBe('{ nested }');
+        expect(formatCellValue({ city: 'Bengaluru', country: 'India', plan: 'pro', status: 'active' })).toBe(
+            '{ city, country, plan, … }',
+        );
+        expect(formatCellValue('x'.repeat(100))).toContain('…');
         expect(formatCellValue(Symbol('x'))).toBe('Symbol(x)');
+    });
+
+    it('formats tooltip values with full detail', () => {
+        expect(formatCellTooltip({ nested: { a: 1 } })).toContain('"nested"');
+        expect(formatCellTooltip(['a', 1])).toContain('"a"');
+        expect(formatCellTooltip('plain')).toBe('plain');
     });
 
     it('creates stable record ids', () => {
