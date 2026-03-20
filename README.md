@@ -143,3 +143,18 @@ pnpm exec tsc --noEmit
 ## License
 
 MIT
+
+## Release Notes & Versioning
+
+Release notes are tracked in [CHANGELOG.md](CHANGELOG.md). Please update the changelog and bump the version in `package.json` for each new release.
+
+### Release Workflow
+
+1. Make code changes and ensure all tests/lint pass (`pnpm test`, `pnpm lint`).
+2. Update [CHANGELOG.md](CHANGELOG.md) with a summary of changes for the new version.
+3. Bump the version in `package.json` (follow semver: major.minor.patch).
+4. Commit changes with a message like `chore(release): vX.Y.Z`.
+5. Run `pnpm make` to generate distributables.
+6. Optionally publish or distribute the release build.
+
+See [CHANGELOG.md](CHANGELOG.md) for detailed release history.
