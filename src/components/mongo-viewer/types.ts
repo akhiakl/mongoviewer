@@ -1,4 +1,7 @@
 import type {
+    CollectionIndexSummary,
+    CollectionSchemaSummary,
+    CollectionStats,
     DatabaseTreeItem,
     DocumentsResult,
     Selection,
@@ -14,3 +17,7 @@ export type ViewMode = "table" | "json"
 export type DocumentsResponse = DocumentsResult
 
 export type ViewerRecord = SerializableRecord
+
+export type { CollectionIndexSummary, CollectionSchemaSummary, CollectionStats }
+
+export type SortDirection = "asc" | "desc"

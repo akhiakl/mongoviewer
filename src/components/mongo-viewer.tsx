@@ -3,6 +3,7 @@ import React, { useMemo, useState } from "react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { DatabasesSidebar } from "@/components/mongo-viewer/databases-sidebar"
 import { useCollectionDocuments } from "@/components/mongo-viewer/hooks/use-collection-documents"
+import { useCollectionInsights } from "@/components/mongo-viewer/hooks/use-collection-insights"
 import { useDatabasesTree } from "@/components/mongo-viewer/hooks/use-databases-tree"
 import { useQueryPresets } from "@/components/mongo-viewer/hooks/use-query-presets"
 import { getQueryFieldNames, getQueryFieldSamples } from "@/components/mongo-viewer/query-field-metadata"
@@ -10,7 +11,7 @@ import { ViewerHeader } from "@/components/mongo-viewer/viewer-header"
 import { ViewerContent } from "@/components/mongo-viewer/viewer-content"
 import { ViewerFooter } from "@/components/mongo-viewer/viewer-footer"
 import { ViewerNavigation } from "@/components/mongo-viewer/viewer-navigation"
-import type { DatabaseTreeItem, Selection, ViewMode } from "@/components/mongo-viewer/types"
+import type { DatabaseTreeItem, Selection, SortDirection, ViewMode } from "@/components/mongo-viewer/types"
 import { SidebarInset, SidebarProvider } from "./ui/sidebar"
 
 type MongoViewerClientProps = {
@@ -50,6 +51,8 @@ export function MongoViewerClient({ activeConnectionId, activeConnectionName, on
     const [queryDraft, setQueryDraft] = useState("")
     const [appliedMongoQuery, setAppliedMongoQuery] = useState("")
     const [presetName, setPresetName] = useState("")
+    const [sortField, setSortField] = useState<string | null>(null)
+    const [sortDirection, setSortDirection] = useState<SortDirection>("asc")
 
     const { presets, deletePreset, getPresetByName, savePreset } = useQueryPresets(selection)
 
@@ -60,7 +63,10 @@ export function MongoViewerClient({ activeConnectionId, activeConnectionName, on
         page,
         pageSize,
         mongoQuery: appliedMongoQuery || undefined,
+        sortDirection,
+        sortField,
     })
+    const { indexes, insightsError, loadingInsights, schemaSummary, stats } = useCollectionInsights(activeConnectionId, selection)
 
     React.useEffect(() => {
         const timeoutId = window.setTimeout(() => {
@@ -93,10 +99,12 @@ export function MongoViewerClient({ activeConnectionId, activeConnectionName, on
         setAppliedMongoQuery("")
         setPresetName("")
         setPageSize(50)
+        setSortField(null)
+        setSortDirection("asc")
     }, [selection?.collection, selection?.db])
 
     const totalPages = Math.max(1, Math.ceil(total / pageSize))
-    const error = docsError ?? treeError
+    const error = docsError ?? treeError ?? insightsError
     const showEmptyConnectionState = !activeConnectionId
     const noResultsMessage =
         records.length === 0 ? "No records for this collection." : "No records match the current quick filter."
@@ -186,10 +194,25 @@ export function MongoViewerClient({ activeConnectionId, activeConnectionName, on
                         <>
                             <ViewerContent
                                 filteredRecords={filteredRecords}
+                                indexes={indexes}
+                                loadingInsights={loadingInsights}
                                 loadingDocs={loadingDocs}
                                 noResultsMessage={noResultsMessage}
+                                onSortDirectionChange={(direction) => {
+                                    setSortDirection(direction)
+                                    setPage(1)
+                                }}
+                                onSortFieldChange={(field) => {
+                                    setSortField(field)
+                                    setPage(1)
+                                }}
                                 onViewModeChange={setViewMode}
+                                queryFieldNames={queryFieldNames}
+                                schemaSummary={schemaSummary}
                                 selection={selection}
+                                sortDirection={sortDirection}
+                                sortField={sortField}
+                                stats={stats}
                                 viewMode={viewMode}
                             />
                             <ViewerFooter

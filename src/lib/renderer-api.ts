@@ -1,9 +1,13 @@
 import type {
+    CollectionIndexSummary,
+    CollectionSchemaSummary,
+    CollectionStats,
     ConnectionsState,
     DatabaseTreeItem,
     DocumentsQuery,
     DocumentsResult,
     SaveConnectionInput,
+    Selection,
 } from './mongo-types';
 
 type MongoViewerApi = {
@@ -16,6 +20,9 @@ type MongoViewerApi = {
     clearActiveConnection(): Promise<{ activeConnectionId: string | null }>;
     listDatabaseTree(): Promise<DatabaseTreeItem[]>;
     listDocuments(query: DocumentsQuery): Promise<DocumentsResult>;
+    getCollectionIndexes(selection: Selection): Promise<CollectionIndexSummary[]>;
+    getCollectionStats(selection: Selection): Promise<CollectionStats>;
+    getCollectionSchemaSummary(selection: Selection): Promise<CollectionSchemaSummary>;
     pickTlsCertificate(): Promise<string | null>;
 };
 

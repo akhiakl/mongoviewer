@@ -2,7 +2,7 @@ import { ipcMain } from 'electron/main';
 
 import { buildMongoConnectionString } from '../../mongo-connection';
 import { clearActiveConnection, createConnection, deleteConnection, getActiveConnection, getConnectionsState, setActiveConnection } from '../connection-store';
-import { listDatabaseNames, listDatabaseTree, listDocuments } from '../mongo-service';
+import { getCollectionSchemaSummary, getCollectionStats, listCollectionIndexes, listDatabaseNames, listDatabaseTree, listDocuments } from '../mongo-service';
 import { persistTlsCertificate, removeTlsCertificate } from '../tls-certificate-service';
 import type { DocumentsQuery, SaveConnectionInput } from '../../mongo-types';
 import { requireNonEmptyString, validateDocumentsQuery } from './input-validators';
@@ -92,5 +92,38 @@ export function registerMongoIpcHandlers() {
         }
 
         return listDocuments(activeConnection.uri, query);
+    });
+
+    ipcMain.handle('mongo:get-collection-indexes', async (_event, query: Pick<DocumentsQuery, 'db' | 'collection'>) => {
+        validateDocumentsQuery(query);
+
+        const activeConnection = await getActiveConnection();
+        if (!activeConnection) {
+            throw new Error('No active connection selected.');
+        }
+
+        return listCollectionIndexes(activeConnection.uri, query);
+    });
+
+    ipcMain.handle('mongo:get-collection-stats', async (_event, query: Pick<DocumentsQuery, 'db' | 'collection'>) => {
+        validateDocumentsQuery(query);
+
+        const activeConnection = await getActiveConnection();
+        if (!activeConnection) {
+            throw new Error('No active connection selected.');
+        }
+
+        return getCollectionStats(activeConnection.uri, query);
+    });
+
+    ipcMain.handle('mongo:get-collection-schema-summary', async (_event, query: Pick<DocumentsQuery, 'db' | 'collection'>) => {
+        validateDocumentsQuery(query);
+
+        const activeConnection = await getActiveConnection();
+        if (!activeConnection) {
+            throw new Error('No active connection selected.');
+        }
+
+        return getCollectionSchemaSummary(activeConnection.uri, query);
     });
 }

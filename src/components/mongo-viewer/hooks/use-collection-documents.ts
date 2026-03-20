@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-import type { DocumentsResponse, Selection } from '@/components/mongo-viewer/types';
+import type { DocumentsResponse, Selection, SortDirection } from '@/components/mongo-viewer/types';
 import { mongoViewer } from '@/lib/renderer-api';
 
 type UseCollectionDocumentsArgs = {
@@ -9,6 +9,8 @@ type UseCollectionDocumentsArgs = {
   page: number;
   pageSize: number;
   mongoQuery?: string;
+  sortField?: string | null;
+  sortDirection: SortDirection;
 };
 
 export function useCollectionDocuments({
@@ -17,6 +19,8 @@ export function useCollectionDocuments({
   page,
   pageSize,
   mongoQuery,
+  sortField,
+  sortDirection,
 }: UseCollectionDocumentsArgs) {
   const [response, setResponse] = useState<DocumentsResponse | null>(null);
   const [loadingDocs, setLoadingDocs] = useState(false);
@@ -43,6 +47,8 @@ export function useCollectionDocuments({
           page,
           pageSize,
           mongoQuery,
+          sortField: sortField ?? undefined,
+          sortDirection,
         });
 
         if (!cancelled) {
@@ -65,7 +71,7 @@ export function useCollectionDocuments({
     return () => {
       cancelled = true;
     };
-  }, [activeConnectionId, mongoQuery, page, pageSize, selection]);
+  }, [activeConnectionId, mongoQuery, page, pageSize, selection, sortDirection, sortField]);
 
   return {
     records: response?.records ?? [],

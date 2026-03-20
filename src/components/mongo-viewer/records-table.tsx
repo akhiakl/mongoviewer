@@ -1,13 +1,18 @@
 import type { CSSProperties } from "react"
 import { useEffect, useMemo, useRef, useState } from "react"
+import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react"
 import { List, type ListImperativeAPI, type RowComponentProps } from "react-window"
 
 import { RecordsTableCell } from "@/components/mongo-viewer/records-table-cell"
 import { JsonValueInspector } from "@/components/mongo-viewer/json-value-viewer"
+import type { SortDirection } from "@/components/mongo-viewer/types"
 import { formatCellValue } from "@/lib/document-format"
 
 type RecordsTableProps = {
+    onSortChange?: (fieldName: string) => void
     records: Record<string, unknown>[]
+    sortDirection?: SortDirection
+    sortField?: string | null
 }
 
 const MIN_COLUMN_WIDTH = 140
@@ -97,7 +102,7 @@ function RecordRow({ columns, gridTemplateColumns, index, onInspectCell, records
     )
 }
 
-export function RecordsTable({ records }: RecordsTableProps) {
+export function RecordsTable({ onSortChange, records, sortDirection = "asc", sortField = null }: RecordsTableProps) {
     const viewportRef = useRef<HTMLDivElement | null>(null)
     const listRef = useRef<ListImperativeAPI | null>(null)
     const resizeStateRef = useRef<{ column: string; startWidth: number; startX: number } | null>(null)
@@ -251,10 +256,25 @@ export function RecordsTable({ records }: RecordsTableProps) {
                                     role="columnheader"
                                     className="relative min-w-0 border-r border-border px-2 py-2 last:border-r-0"
                                 >
-                                    <div className="text-xs font-semibold tracking-wide text-foreground">{column}</div>
-                                    <div className="mt-1 text-[11px] font-medium tracking-[0.12em] text-muted-foreground">
-                                        {columnTypes[column]}
-                                    </div>
+                                    <button
+                                        type="button"
+                                        className="flex w-[calc(100%-0.5rem)] items-start justify-between gap-2 text-left"
+                                        onClick={() => onSortChange?.(column)}
+                                    >
+                                        <div className="min-w-0">
+                                            <div className="truncate text-xs font-semibold tracking-wide text-foreground">{column}</div>
+                                            <div className="mt-1 text-[11px] font-medium tracking-[0.12em] text-muted-foreground">
+                                                {columnTypes[column]}
+                                            </div>
+                                        </div>
+                                        <span className="mt-0.5 shrink-0 text-muted-foreground">
+                                            {sortField === column ? (
+                                                sortDirection === "asc" ? <ArrowUp className="size-3.5" /> : <ArrowDown className="size-3.5" />
+                                            ) : (
+                                                <ArrowUpDown className="size-3.5 opacity-70" />
+                                            )}
+                                        </span>
+                                    </button>
                                     <div
                                         role="separator"
                                         aria-orientation="vertical"

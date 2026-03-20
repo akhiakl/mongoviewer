@@ -5,6 +5,7 @@ import { MongoViewerClient } from '@/components/mongo-viewer';
 
 const useDatabasesTreeMock = vi.fn();
 const useCollectionDocumentsMock = vi.fn();
+const useCollectionInsightsMock = vi.fn();
 
 vi.mock('@/components/mongo-viewer/query-editor', () => ({
   QueryEditor: ({
@@ -42,6 +43,10 @@ vi.mock('@/components/mongo-viewer/hooks/use-databases-tree', () => ({
 
 vi.mock('@/components/mongo-viewer/hooks/use-collection-documents', () => ({
   useCollectionDocuments: (...args: unknown[]) => useCollectionDocumentsMock(...args),
+}));
+
+vi.mock('@/components/mongo-viewer/hooks/use-collection-insights', () => ({
+  useCollectionInsights: (...args: unknown[]) => useCollectionInsightsMock(...args),
 }));
 
 vi.mock('@/components/mongo-viewer/databases-sidebar', () => ({
@@ -91,11 +96,15 @@ describe('MongoViewerClient', () => {
         page,
         pageSize,
         mongoQuery,
+        sortDirection,
+        sortField,
         selection,
       }: {
         page: number
         pageSize: number
         mongoQuery?: string
+        sortDirection: 'asc' | 'desc'
+        sortField?: string | null
         selection: { db: string; collection: string } | null
       }) => ({
         records:
@@ -109,13 +118,45 @@ describe('MongoViewerClient', () => {
         currentPage: page,
         loadingDocs: false,
         docsError: null,
-        lastArgs: { page, pageSize, mongoQuery, selection },
+        lastArgs: { page, pageSize, mongoQuery, selection, sortDirection, sortField },
       }),
     );
+    useCollectionInsightsMock.mockReturnValue({
+      indexes: [
+        {
+          name: '_id_',
+          fields: ['_id (1)'],
+          unique: true,
+          sparse: false,
+          partial: false,
+          ttlSeconds: null,
+        },
+      ],
+      schemaSummary: {
+        sampleSize: 2,
+        fields: [
+          {
+            path: 'status',
+            types: ['string'],
+            presenceRate: 1,
+            exampleValues: ['active'],
+          },
+        ],
+      },
+      stats: {
+        documentCount: 2,
+        avgDocumentSize: 120,
+        storageSize: 2048,
+        totalIndexSize: 1024,
+        totalIndexes: 1,
+      },
+      loadingInsights: false,
+      insightsError: null,
+    });
     window.localStorage.clear();
   });
 
-  it('supports quick filtering, query apply, page sizing, and view switching', async () => {
+  it('supports quick filtering, query apply, server sorting, page sizing, and view switching', async () => {
     render(
       <MongoViewerClient
         activeConnectionId="conn-1"
@@ -129,6 +170,9 @@ describe('MongoViewerClient', () => {
       expect(screen.getByText('Sidebar Selection:app/users')).toBeInTheDocument();
       expect(screen.getByText('Query fields:_id,name,profile,profile.city,status')).toBeInTheDocument();
       expect(screen.getByText('Query sample keys:_id,name,profile.city,status')).toBeInTheDocument();
+      expect(screen.getByText('Collection Stats')).toBeInTheDocument();
+      expect(screen.getByText('Schema Summary')).toBeInTheDocument();
+      expect(screen.getAllByText('Indexes').length).toBeGreaterThan(0);
     });
 
     fireEvent.change(screen.getByPlaceholderText('Filter records already loaded on this page'), {
@@ -153,6 +197,26 @@ describe('MongoViewerClient', () => {
       };
       expect(latestArgs.mongoQuery).toBe('{"status":"active"}');
       expect(screen.getByText('query active')).toBeInTheDocument();
+    });
+
+    fireEvent.change(screen.getByLabelText('Sort field'), { target: { value: 'status' } });
+
+    await waitFor(() => {
+      const latestArgs = useCollectionDocumentsMock.mock.calls.at(-1)?.[0] as {
+        sortDirection: 'asc' | 'desc'
+        sortField?: string | null
+      };
+      expect(latestArgs.sortField).toBe('status');
+      expect(latestArgs.sortDirection).toBe('asc');
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Ascending' }));
+
+    await waitFor(() => {
+      const latestArgs = useCollectionDocumentsMock.mock.calls.at(-1)?.[0] as {
+        sortDirection: 'asc' | 'desc'
+      };
+      expect(latestArgs.sortDirection).toBe('desc');
     });
 
     fireEvent.change(screen.getByLabelText('Rows per page'), { target: { value: '100' } });
@@ -196,9 +260,13 @@ describe('MongoViewerClient', () => {
     useCollectionDocumentsMock.mockImplementation(
       ({
         page,
+        sortDirection,
+        sortField,
         selection,
       }: {
         page: number
+        sortDirection: 'asc' | 'desc'
+        sortField?: string | null
         selection: { db: string; collection: string } | null
       }) => ({
         records: selection ? [{ _id: page, name: `Row ${page}` }] : [],
@@ -206,6 +274,7 @@ describe('MongoViewerClient', () => {
         currentPage: page,
         loadingDocs: false,
         docsError: null,
+        lastArgs: { sortDirection, sortField },
       }),
     );
 
@@ -262,6 +331,13 @@ describe('MongoViewerClient', () => {
       currentPage: 1,
       loadingDocs: false,
       docsError: null,
+    });
+    useCollectionInsightsMock.mockReturnValue({
+      indexes: [],
+      schemaSummary: null,
+      stats: null,
+      loadingInsights: false,
+      insightsError: null,
     });
 
     const { rerender } = render(

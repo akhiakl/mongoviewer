@@ -2,15 +2,20 @@ import { EJSON } from 'bson';
 import { MongoClient } from 'mongodb';
 
 import type {
+  CollectionIndexSummary,
+  CollectionSchemaSummary,
+  CollectionStats,
   DatabaseTreeItem,
   DocumentsQuery,
   DocumentsResult,
   SerializableRecord,
 } from '../mongo-types';
+import { summarizeCollectionSchema } from './mongo-schema-summary';
 
 const EXCLUDED_DATABASES = new Set(['admin', 'config']);
 const DEFAULT_PAGE_SIZE = 50;
 const MAX_PAGE_SIZE = 200;
+const MAX_SCHEMA_SAMPLE_SIZE = 200;
 
 declare global {
   var __mongoClientPromises: Map<string, Promise<MongoClient>> | undefined;
@@ -76,6 +81,15 @@ function parseMongoFilter(mongoQuery: string | undefined) {
   }
 }
 
+function parseSortDirection(direction: DocumentsQuery['sortDirection']) {
+  return direction === 'desc' ? -1 : 1;
+}
+
+function parseSortField(sortField: string | undefined) {
+  const normalizedField = sortField?.trim();
+  return normalizedField || null;
+}
+
 export async function listDatabaseNames(uri: string) {
   const client = await getMongoClient(uri);
   const { databases } = await client.db().admin().listDatabases();
@@ -110,10 +124,16 @@ export async function listDocuments(uri: string, query: DocumentsQuery): Promise
   const client = await getMongoClient(uri);
   const collection = client.db(query.db).collection(query.collection);
   const filter = parseMongoFilter(query.mongoQuery);
+  const sortField = parseSortField(query.sortField);
+  const sortDirection = parseSortDirection(query.sortDirection);
+  const cursor = collection.find(filter);
+
+  if (sortField) {
+    cursor.sort({ [sortField]: sortDirection });
+  }
 
   const [records, total] = await Promise.all([
-    collection
-      .find(filter)
+    cursor
       .skip((page - 1) * pageSize)
       .limit(pageSize)
       .toArray(),
@@ -128,4 +148,54 @@ export async function listDocuments(uri: string, query: DocumentsQuery): Promise
     total,
     records: records.map((record) => serializeDocument(record as SerializableRecord)),
   };
+}
+
+export async function listCollectionIndexes(
+  uri: string,
+  query: Pick<DocumentsQuery, 'db' | 'collection'>,
+): Promise<CollectionIndexSummary[]> {
+  const client = await getMongoClient(uri);
+  const collection = client.db(query.db).collection(query.collection);
+  const indexes = await collection.indexes();
+
+  return indexes.map((index) => ({
+    name: index.name,
+    fields: Object.entries(index.key).map(([field, direction]) => `${field} (${direction})`),
+    unique: Boolean(index.unique),
+    sparse: Boolean(index.sparse),
+    partial: Boolean(index.partialFilterExpression),
+    ttlSeconds: typeof index.expireAfterSeconds === 'number' ? index.expireAfterSeconds : null,
+  }));
+}
+
+export async function getCollectionStats(
+  uri: string,
+  query: Pick<DocumentsQuery, 'db' | 'collection'>,
+): Promise<CollectionStats> {
+  const client = await getMongoClient(uri);
+  const database = client.db(query.db);
+  const collection = database.collection(query.collection);
+  const [documentCount, statsResult] = await Promise.all([
+    collection.estimatedDocumentCount(),
+    database.command({ collStats: query.collection }),
+  ]);
+
+  return {
+    documentCount,
+    avgDocumentSize: typeof statsResult.avgObjSize === 'number' ? statsResult.avgObjSize : null,
+    storageSize: typeof statsResult.storageSize === 'number' ? statsResult.storageSize : null,
+    totalIndexSize: typeof statsResult.totalIndexSize === 'number' ? statsResult.totalIndexSize : null,
+    totalIndexes: typeof statsResult.nindexes === 'number' ? statsResult.nindexes : 0,
+  };
+}
+
+export async function getCollectionSchemaSummary(
+  uri: string,
+  query: Pick<DocumentsQuery, 'db' | 'collection'>,
+): Promise<CollectionSchemaSummary> {
+  const client = await getMongoClient(uri);
+  const collection = client.db(query.db).collection(query.collection);
+  const records = await collection.find({}).limit(MAX_SCHEMA_SAMPLE_SIZE).toArray();
+
+  return summarizeCollectionSchema(records.map((record) => serializeDocument(record as SerializableRecord)));
 }

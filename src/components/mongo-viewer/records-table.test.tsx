@@ -100,4 +100,26 @@ describe("RecordsTable", () => {
         expect(screen.getByText("42")).toBeInTheDocument()
         expect(screen.getByText("true")).toBeInTheDocument()
     })
+
+    it("propagates header sort changes", () => {
+        const onSortChange = vi.fn()
+
+        render(
+            <RecordsTable
+                onSortChange={onSortChange}
+                records={[
+                    {
+                        _id: { $oid: "507f1f77bcf86cd799439011" },
+                        amount: 42,
+                        name: "Alice",
+                    },
+                ]}
+                sortDirection="asc"
+                sortField="name"
+            />,
+        )
+
+        fireEvent.click(screen.getByRole("button", { name: /^name/i }))
+        expect(onSortChange).toHaveBeenCalledWith("name")
+    })
 })

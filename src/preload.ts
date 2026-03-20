@@ -1,11 +1,15 @@
 import { contextBridge, ipcRenderer } from 'electron';
 
 import type {
+    CollectionIndexSummary,
+    CollectionSchemaSummary,
+    CollectionStats,
     ConnectionsState,
     DatabaseTreeItem,
     DocumentsQuery,
     DocumentsResult,
     SaveConnectionInput,
+    Selection,
 } from './lib/mongo-types';
 
 contextBridge.exposeInMainWorld('mongoViewer', {
@@ -29,5 +33,11 @@ contextBridge.exposeInMainWorld('mongoViewer', {
         ipcRenderer.invoke('mongo:list-database-tree') as Promise<DatabaseTreeItem[]>,
     listDocuments: (query: DocumentsQuery) =>
         ipcRenderer.invoke('mongo:list-documents', query) as Promise<DocumentsResult>,
+    getCollectionIndexes: (selection: Selection) =>
+        ipcRenderer.invoke('mongo:get-collection-indexes', selection) as Promise<CollectionIndexSummary[]>,
+    getCollectionStats: (selection: Selection) =>
+        ipcRenderer.invoke('mongo:get-collection-stats', selection) as Promise<CollectionStats>,
+    getCollectionSchemaSummary: (selection: Selection) =>
+        ipcRenderer.invoke('mongo:get-collection-schema-summary', selection) as Promise<CollectionSchemaSummary>,
     pickTlsCertificate: () => ipcRenderer.invoke('dialog:pick-tls-certificate') as Promise<string | null>,
 });
