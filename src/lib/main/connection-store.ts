@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, unlink, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { app } from 'electron';
 
@@ -135,17 +135,26 @@ export async function createConnection(input: {
 }
 
 export async function deleteConnection(connectionId: string) {
-    return mutateStore((store) => {
-        const nextConnections = store.connections.filter((connection) => connection.id !== connectionId);
-
-        if (nextConnections.length === store.connections.length) {
+    return mutateStore(async (store) => {
+        const target = store.connections.find((connection) => connection.id === connectionId);
+        if (!target) {
             throw new Error('Connection not found.');
         }
+
+        const nextConnections = store.connections.filter((connection) => connection.id !== connectionId);
 
         store.connections = nextConnections;
 
         if (store.activeConnectionId === connectionId) {
             store.activeConnectionId = nextConnections[0]?.id ?? null;
+        }
+
+        if (target.tlsCertificatePath) {
+            await unlink(target.tlsCertificatePath).catch((error: NodeJS.ErrnoException) => {
+                if (error.code !== 'ENOENT') {
+                    throw error;
+                }
+            });
         }
 
         return {

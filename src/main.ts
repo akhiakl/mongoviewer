@@ -1,11 +1,26 @@
 import { app, BrowserWindow, dialog, ipcMain, nativeTheme } from 'electron/main';
+import { copyFile, mkdir, unlink } from 'node:fs/promises';
 import path from 'node:path';
 import started from 'electron-squirrel-startup';
+import { randomUUID } from 'node:crypto';
 
 import { buildMongoConnectionString } from './lib/mongo-connection';
 import { createConnection, deleteConnection, getActiveConnection, getConnectionsState, setActiveConnection } from './lib/main/connection-store';
 import { listDatabaseNames, listDatabaseTree, listDocuments } from './lib/main/mongo-service';
 import type { DocumentsQuery, SaveConnectionInput } from './lib/mongo-types';
+
+async function persistTlsCertificate(sourcePath: string): Promise<string> {
+  const certificatesDir = path.join(app.getPath('userData'), 'storage', 'certificates');
+  await mkdir(certificatesDir, { recursive: true });
+
+  const extension = path.extname(sourcePath);
+  const fileName = `${Date.now()}-${randomUUID()}${extension}`;
+  const destinationPath = path.join(certificatesDir, fileName);
+
+  await copyFile(sourcePath, destinationPath);
+
+  return destinationPath;
+}
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (started) {
@@ -31,6 +46,7 @@ ipcMain.handle('mongo:save-connection', async (_event, input: SaveConnectionInpu
   const name = input.name?.trim();
   const connectionString = input.connectionString?.trim();
   const tlsCertificatePath = input.tlsCertificatePath?.trim();
+  let persistedTlsCertificatePath: string | undefined;
 
   if (!name) {
     throw new Error('Connection name is required.');
@@ -40,13 +56,29 @@ ipcMain.handle('mongo:save-connection', async (_event, input: SaveConnectionInpu
     throw new Error('Connection string is required.');
   }
 
-  const uri = buildMongoConnectionString(connectionString, tlsCertificatePath);
+  if (tlsCertificatePath) {
+    persistedTlsCertificatePath = await persistTlsCertificate(tlsCertificatePath);
+  }
 
-  return createConnection({
-    name,
-    uri,
-    tlsCertificatePath,
-  });
+  const uri = buildMongoConnectionString(connectionString, persistedTlsCertificatePath);
+
+  try {
+    return createConnection({
+      name,
+      uri,
+      tlsCertificatePath: persistedTlsCertificatePath,
+    });
+  } catch (error) {
+    if (persistedTlsCertificatePath) {
+      await unlink(persistedTlsCertificatePath).catch((unlinkError: NodeJS.ErrnoException) => {
+        if (unlinkError.code !== 'ENOENT') {
+          throw unlinkError;
+        }
+      });
+    }
+
+    throw error;
+  }
 });
 
 ipcMain.handle('mongo:delete-connection', async (_event, connectionId: string) => {

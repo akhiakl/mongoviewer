@@ -131,28 +131,43 @@ export function ConnectionHome({
                         <div className="space-y-1.5">
                             <div className="flex items-center justify-between gap-3">
                                 <Label htmlFor="tls-certificate-path">
-                                    TLS certificate path (optional)
+                                    TLS certificate file (optional)
                                 </Label>
-                                <Button
-                                    type="button"
-                                    size="sm"
-                                    variant="ghost"
-                                    onClick={async () => {
-                                        const selectedPath = await onPickTlsCertificate()
-                                        if (selectedPath) {
-                                            setTlsCertificatePath(selectedPath)
-                                        }
-                                    }}
-                                >
-                                    Browse
-                                </Button>
+                                <div className="flex items-center gap-2">
+                                    {tlsCertificatePath ? (
+                                        <Button
+                                            type="button"
+                                            size="sm"
+                                            variant="ghost"
+                                            onClick={() => setTlsCertificatePath("")}
+                                        >
+                                            Clear
+                                        </Button>
+                                    ) : null}
+                                    <Button
+                                        type="button"
+                                        size="sm"
+                                        variant="ghost"
+                                        onClick={async () => {
+                                            const selectedPath = await onPickTlsCertificate()
+                                            if (selectedPath) {
+                                                setTlsCertificatePath(selectedPath)
+                                            }
+                                        }}
+                                    >
+                                        Choose File
+                                    </Button>
+                                </div>
                             </div>
                             <Input
                                 id="tls-certificate-path"
                                 value={tlsCertificatePath}
-                                onChange={(event) => setTlsCertificatePath(event.target.value)}
-                                placeholder="/absolute/path/to/rds-combined-ca-bundle.pem"
+                                readOnly
+                                placeholder="No file selected"
                             />
+                            <p className="text-xs text-muted-foreground">
+                                The selected certificate is copied into app storage with a unique file name.
+                            </p>
                         </div>
 
                         {error ? (
