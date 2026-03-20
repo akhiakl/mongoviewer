@@ -1,24 +1,14 @@
 import { Database } from 'lucide-react'
+
 import Menu from './menu'
 
-// WebkitAppRegion is not in React.CSSProperties — extend it locally
 type AppRegionStyle = React.CSSProperties & { WebkitAppRegion?: 'drag' | 'no-drag' }
 
 type TitleBarProps = {
     platform: string
-    subtitle?: string | null
 }
 
-/**
- * Custom title bar that replaces the OS chrome.
- *
- * The full bar is marked `-webkit-app-region: drag` so the window can be
- * dragged from anywhere within it. On macOS we leave ~72 px on the left for
- * the traffic-light controls. On Windows/Linux the native window controls are
- * rendered by Electron's `titleBarOverlay` above the right edge and do not
- * need extra space in our HTML.
- */
-export function TitleBar({ platform, subtitle }: TitleBarProps) {
+export function TitleBar({ platform }: TitleBarProps) {
     const isMac = platform === 'darwin'
 
     const dragStyle: AppRegionStyle = { WebkitAppRegion: 'drag' }
@@ -38,14 +28,6 @@ export function TitleBar({ platform, subtitle }: TitleBarProps) {
                     <Menu />
                 </div>
             </div>
-            {
-                subtitle && (
-                    <div className="flex h-6 shrink-0 items-center border-b border-border bg-background px-4 text-sm text-muted-foreground" style={noDragStyle}>
-                        <span className="text-muted-foreground/70" aria-hidden>·</span>
-                        <span className="max-w-50 truncate text-muted-foreground">{subtitle}</span>
-                    </div>
-                )
-            }
         </div>
     )
 }

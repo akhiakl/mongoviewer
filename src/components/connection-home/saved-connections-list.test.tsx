@@ -61,7 +61,7 @@ describe('SavedConnectionsList', () => {
         expect(screen.getByText('Prod')).toBeInTheDocument();
         expect(screen.getByText('Active')).toBeInTheDocument();
 
-        fireEvent.click(screen.getByRole('button', { name: 'Connect' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Open' }));
         fireEvent.click(screen.getByRole('button', { name: 'Remove' }));
 
         expect(onConnect).toHaveBeenCalledWith('c1');

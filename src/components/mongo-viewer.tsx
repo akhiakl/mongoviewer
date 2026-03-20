@@ -12,7 +12,7 @@ import { RecordsTable } from "@/components/mongo-viewer/records-table"
 import { ViewerHeader } from "@/components/mongo-viewer/viewer-header"
 import type { DatabaseTreeItem, Selection, ViewMode } from "@/components/mongo-viewer/types"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
-import { Braces, Table2 } from "lucide-react"
+import { ArrowLeft, Braces, Database, Table2 } from "lucide-react"
 import { SidebarInset, SidebarProvider } from "./ui/sidebar"
 
 type MongoViewerClientProps = {
@@ -47,6 +47,7 @@ export function MongoViewerClient({ activeConnectionId, activeConnectionName, on
     const [pageSize, setPageSize] = useState(50)
     const [viewMode, setViewMode] = useState<ViewMode>("table")
     const [quickFilter, setQuickFilter] = useState("")
+    const [debouncedQuickFilter, setDebouncedQuickFilter] = useState("")
     const [queryDraft, setQueryDraft] = useState("")
     const [appliedMongoQuery, setAppliedMongoQuery] = useState("")
     const [presetName, setPresetName] = useState("")
@@ -62,14 +63,22 @@ export function MongoViewerClient({ activeConnectionId, activeConnectionName, on
         mongoQuery: appliedMongoQuery || undefined,
     })
 
+    React.useEffect(() => {
+        const timeoutId = window.setTimeout(() => {
+            setDebouncedQuickFilter(quickFilter)
+        }, 150)
+
+        return () => window.clearTimeout(timeoutId)
+    }, [quickFilter])
+
     const filteredRecords = useMemo(() => {
-        const normalizedFilter = quickFilter.trim().toLowerCase()
+        const normalizedFilter = debouncedQuickFilter.trim().toLowerCase()
         if (!normalizedFilter) {
             return records
         }
 
         return records.filter((record) => JSON.stringify(record).toLowerCase().includes(normalizedFilter))
-    }, [quickFilter, records])
+    }, [debouncedQuickFilter, records])
 
     React.useEffect(() => {
         setSelection((current) => pickSelection(tree, current))
@@ -78,6 +87,7 @@ export function MongoViewerClient({ activeConnectionId, activeConnectionName, on
 
     React.useEffect(() => {
         setQuickFilter("")
+        setDebouncedQuickFilter("")
         setQueryDraft("")
         setAppliedMongoQuery("")
         setPresetName("")
@@ -128,6 +138,25 @@ export function MongoViewerClient({ activeConnectionId, activeConnectionName, on
 
     return (
         <section className="flex min-h-0 flex-1 flex-col overflow-hidden">
+            {onBack ? (
+                <div className="mb-2 flex items-center justify-between gap-3 rounded-lg border border-border bg-card px-4 py-2.5">
+                    <div className="min-w-0 flex items-center gap-3">
+                        <div className="flex size-9 items-center justify-center rounded-md bg-muted text-muted-foreground">
+                            <Database className="size-4" />
+                        </div>
+                        <div className="min-w-0">
+                            <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground">Navigation</p>
+                            <p className="truncate text-sm font-medium text-foreground">
+                                {activeConnectionName ?? "Connected session"}
+                            </p>
+                        </div>
+                    </div>
+                    <Button variant="outline" size="sm" className="shrink-0" onClick={onBack}>
+                        <ArrowLeft className="size-4" />
+                        Back To Connections
+                    </Button>
+                </div>
+            ) : null}
             <SidebarProvider className="flex min-h-0 flex-1">
                 <DatabasesSidebar
                     tree={tree}
@@ -147,7 +176,6 @@ export function MongoViewerClient({ activeConnectionId, activeConnectionName, on
                         filteredRecordsCount={filteredRecords.length}
                         loadingDocs={loadingDocs}
                         onApplyQuery={handleApplyQuery}
-                        onBack={onBack}
                         onDeletePreset={handleDeletePreset}
                         onPresetNameChange={setPresetName}
                         onPresetSelect={handlePresetSelect}

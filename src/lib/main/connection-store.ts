@@ -98,7 +98,7 @@ export async function getConnectionsState(): Promise<ConnectionsState> {
         activeConnectionId:
             connections.some((connection) => connection.id === store.activeConnectionId)
                 ? store.activeConnectionId
-                : connections[0]?.id ?? null,
+                : null,
     };
 }
 
@@ -171,6 +171,16 @@ export async function setActiveConnection(connectionId: string) {
     });
 }
 
+export async function clearActiveConnection() {
+    return mutateStore((store) => {
+        store.activeConnectionId = null;
+
+        return {
+            activeConnectionId: null as string | null,
+        };
+    });
+}
+
 export async function getActiveConnection() {
     const store = await readStore();
 
@@ -179,5 +189,5 @@ export async function getActiveConnection() {
         return active;
     }
 
-    return store.connections[0] ?? null;
+    return null;
 }

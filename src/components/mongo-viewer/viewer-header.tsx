@@ -1,9 +1,9 @@
-import { ArrowLeft, Search } from "lucide-react"
+import { Search } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
+import { QueryEditor } from "@/components/mongo-viewer/query-editor"
 import type { QueryPreset } from "@/components/mongo-viewer/query-presets"
 import type { Selection } from "@/components/mongo-viewer/types"
 
@@ -13,7 +13,6 @@ type ViewerHeaderProps = {
     filteredRecordsCount: number
     loadingDocs: boolean
     onApplyQuery: () => void
-    onBack?: () => void
     onDeletePreset: () => void
     onPresetNameChange: (value: string) => void
     onPresetSelect: (value: string) => void
@@ -34,7 +33,6 @@ export function ViewerHeader({
     filteredRecordsCount,
     loadingDocs,
     onApplyQuery,
-    onBack,
     onDeletePreset,
     onPresetNameChange,
     onPresetSelect,
@@ -51,12 +49,6 @@ export function ViewerHeader({
     return (
         <div className="border-b border-border px-4 py-4 md:px-6">
             <div className="min-w-0">
-                {onBack ? (
-                    <Button variant="ghost" size="sm" className="mb-2" onClick={onBack}>
-                        <ArrowLeft className="size-4" />
-                        Connections
-                    </Button>
-                ) : null}
                 <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Collection</p>
                 <h1 className="text-lg font-semibold text-foreground md:text-xl">
                     {selection ? `${selection.db} > ${selection.collection}` : "Pick a collection"}
@@ -80,10 +72,13 @@ export function ViewerHeader({
                         <Input
                             value={quickFilter}
                             onChange={(event) => onQuickFilterChange(event.target.value)}
-                            placeholder="Quick filter current page records"
+                            placeholder="Filter records already loaded on this page"
                             className="pl-8"
                         />
                     </div>
+                    <p className="mt-2 text-xs text-muted-foreground">
+                        Filters only the records currently visible on this page. Use Mongo Query below to filter the full collection in the database.
+                    </p>
                 </div>
                 <div className="rounded-lg border border-border/60 bg-muted/20 p-3">
                     <div className="flex flex-col gap-3">
@@ -91,12 +86,16 @@ export function ViewerHeader({
                             <label className="mb-2 block text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
                                 Mongo Query
                             </label>
-                            <Textarea
+                            <QueryEditor
                                 value={queryDraft}
-                                onChange={(event) => onQueryDraftChange(event.target.value)}
-                                className="min-h-16"
+                                onChange={onQueryDraftChange}
+                                onApplyQuery={onApplyQuery}
+                                disabled={loadingDocs || !selection}
                                 placeholder='Mongo query JSON, e.g. { "status": "active" }'
                             />
+                            <p className="mt-2 text-xs text-muted-foreground">
+                                Auto-closes quotes and braces. Use <kbd className="rounded border border-border px-1 py-0.5 text-[11px]">Ctrl</kbd> + <kbd className="rounded border border-border px-1 py-0.5 text-[11px]">Enter</kbd> to run.
+                            </p>
                         </div>
                         <div className="grid gap-3 md:grid-cols-[minmax(0,14rem)_minmax(0,1fr)]">
                             <div>

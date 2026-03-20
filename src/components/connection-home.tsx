@@ -75,32 +75,41 @@ export function ConnectionHome({
     const error = localError ?? connectionError
 
     return (
-        <div className="flex w-full flex-col gap-6 lg:flex-row">
-            <ConnectionCreateForm
-                name={name}
-                connectionString={connectionString}
-                tlsCertificatePath={tlsCertificatePath}
-                saving={saving}
-                error={error}
-                onNameChange={setName}
-                onConnectionStringChange={setConnectionString}
-                onTlsCertificatePathChange={setTlsCertificatePath}
-                onPickTlsCertificate={async () => {
-                    const selectedPath = await onPickTlsCertificate()
-                    if (selectedPath) {
-                        setTlsCertificatePath(selectedPath)
-                    }
-                }}
-                onSubmit={handleAddConnection}
-            />
-            <SavedConnectionsList
-                connectionsState={connectionsState}
-                loadingConnections={loadingConnections}
-                connectingId={connectingId}
-                deletingId={deletingId}
-                onConnect={handleConnect}
-                onDelete={handleDelete}
-            />
+        <div className="flex h-full w-full min-h-0 flex-col gap-4">
+            <div className="rounded-lg border border-border bg-card px-4 py-3">
+                <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Connections</p>
+                <h1 className="mt-1 text-lg font-semibold text-foreground">Connection Workspace</h1>
+                <p className="mt-1 text-sm text-muted-foreground">
+                    Save connection profiles locally and reopen them quickly whenever you want to inspect MongoDB data.
+                </p>
+            </div>
+            <div className="grid min-h-0 flex-1 gap-4 xl:grid-cols-[minmax(22rem,32rem)_minmax(0,1fr)]">
+                <ConnectionCreateForm
+                    name={name}
+                    connectionString={connectionString}
+                    tlsCertificatePath={tlsCertificatePath}
+                    saving={saving}
+                    error={error}
+                    onNameChange={setName}
+                    onConnectionStringChange={setConnectionString}
+                    onTlsCertificatePathChange={setTlsCertificatePath}
+                    onPickTlsCertificate={async () => {
+                        const selectedPath = await onPickTlsCertificate()
+                        if (selectedPath) {
+                            setTlsCertificatePath(selectedPath)
+                        }
+                    }}
+                    onSubmit={handleAddConnection}
+                />
+                <SavedConnectionsList
+                    connectionsState={connectionsState}
+                    loadingConnections={loadingConnections}
+                    connectingId={connectingId}
+                    deletingId={deletingId}
+                    onConnect={handleConnect}
+                    onDelete={handleDelete}
+                />
+            </div>
         </div>
 
     )

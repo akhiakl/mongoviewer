@@ -1,7 +1,7 @@
 import { ipcMain } from 'electron/main';
 
 import { buildMongoConnectionString } from '../../mongo-connection';
-import { createConnection, deleteConnection, getActiveConnection, getConnectionsState, setActiveConnection } from '../connection-store';
+import { clearActiveConnection, createConnection, deleteConnection, getActiveConnection, getConnectionsState, setActiveConnection } from '../connection-store';
 import { listDatabaseNames, listDatabaseTree, listDocuments } from '../mongo-service';
 import { persistTlsCertificate, removeTlsCertificate } from '../tls-certificate-service';
 import type { DocumentsQuery, SaveConnectionInput } from '../../mongo-types';
@@ -68,6 +68,10 @@ export function registerMongoIpcHandlers() {
         );
 
         return setActiveConnection(normalizedConnectionId);
+    });
+
+    ipcMain.handle('mongo:clear-active-connection', async () => {
+        return clearActiveConnection();
     });
 
     ipcMain.handle('mongo:list-database-tree', async () => {

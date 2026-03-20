@@ -23,23 +23,23 @@ export function SavedConnectionsList({
     const { connections, activeConnectionId } = connectionsState;
 
     return (
-        <Card className="w-full">
-            <CardHeader>
+        <Card className="flex h-full min-h-0 w-full flex-col">
+            <CardHeader className="pb-4">
                 <CardTitle>Saved Connections</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="min-h-0 flex-1">
                 {loadingConnections ? <p className="text-sm text-muted-foreground">Loading connections...</p> : null}
 
                 {connections.length === 0 ? (
                     <p className="text-sm text-muted-foreground">No saved connections yet.</p>
                 ) : (
-                    <div className="mt-4 space-y-2">
+                    <div className="mt-1 space-y-2 overflow-auto pr-1">
                         {connections.map((connection) => (
                             <div
                                 key={connection.id}
-                                className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-card px-3 py-2"
+                                className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-card px-3 py-2.5"
                             >
-                                <div>
+                                <div className="min-w-0 flex-1">
                                     <p className="text-sm font-medium text-foreground">{connection.name}</p>
                                     <p className="text-xs text-muted-foreground">
                                         {new Date(connection.createdAt).toLocaleString()}
@@ -59,11 +59,11 @@ export function SavedConnectionsList({
                                             void onConnect(connection.id);
                                         }}
                                     >
-                                        {connectingId === connection.id ? 'Connecting...' : 'Connect'}
+                                        {connectingId === connection.id ? 'Connecting...' : activeConnectionId === connection.id ? 'Open' : 'Connect'}
                                     </Button>
                                     <Button
                                         size="sm"
-                                        variant="outline"
+                                        variant="ghost"
                                         disabled={deletingId === connection.id}
                                         onClick={() => {
                                             void onDelete(connection.id);

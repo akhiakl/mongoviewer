@@ -1,6 +1,28 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
+vi.mock('@/components/mongo-viewer/query-editor', () => ({
+  QueryEditor: ({
+    disabled,
+    onChange,
+    placeholder,
+    value,
+  }: {
+    disabled?: boolean
+    onChange: (value: string) => void
+    placeholder?: string
+    value: string
+  }) => (
+    <textarea
+      aria-label="Mongo query editor"
+      disabled={disabled}
+      placeholder={placeholder}
+      value={value}
+      onChange={(event) => onChange(event.target.value)}
+    />
+  ),
+}));
+
 import { ViewerHeader } from '@/components/mongo-viewer/viewer-header';
 
 describe('ViewerHeader', () => {
@@ -12,7 +34,6 @@ describe('ViewerHeader', () => {
         filteredRecordsCount={12}
         loadingDocs={false}
         onApplyQuery={vi.fn()}
-        onBack={vi.fn()}
         onDeletePreset={vi.fn()}
         onPresetNameChange={vi.fn()}
         onPresetSelect={vi.fn()}
@@ -66,8 +87,8 @@ describe('ViewerHeader', () => {
       />,
     );
 
-    fireEvent.change(screen.getByPlaceholderText('Quick filter current page records'), { target: { value: 'active' } });
-    fireEvent.change(screen.getByPlaceholderText('Mongo query JSON, e.g. { "status": "active" }'), {
+    fireEvent.change(screen.getByPlaceholderText('Filter records already loaded on this page'), { target: { value: 'active' } });
+    fireEvent.change(screen.getByLabelText('Mongo query editor'), {
       target: { value: '{"archived":true}' },
     });
     fireEvent.change(screen.getByPlaceholderText('e.g. Active users'), { target: { value: 'Archived users' } });
@@ -114,5 +135,7 @@ describe('ViewerHeader', () => {
     expect(screen.getByRole('button', { name: 'Apply Query' })).toBeDisabled();
     expect(screen.getByRole('button', { name: 'Save Preset' })).toBeDisabled();
     expect(screen.getByRole('button', { name: 'Delete Preset' })).toBeDisabled();
+    expect(screen.getByLabelText('Mongo query editor')).toBeDisabled();
+    expect(screen.getByText('Filters only the records currently visible on this page. Use Mongo Query below to filter the full collection in the database.')).toBeInTheDocument();
   });
 });

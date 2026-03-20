@@ -21,6 +21,10 @@ contextBridge.exposeInMainWorld('mongoViewer', {
         }>,
     setActiveConnection: (connectionId: string) =>
         ipcRenderer.invoke('mongo:set-active-connection', connectionId) as Promise<void>,
+    clearActiveConnection: () =>
+        ipcRenderer.invoke('mongo:clear-active-connection') as Promise<{
+            activeConnectionId: string | null;
+        }>,
     listDatabaseTree: () =>
         ipcRenderer.invoke('mongo:list-database-tree') as Promise<DatabaseTreeItem[]>,
     listDocuments: (query: DocumentsQuery) =>

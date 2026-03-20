@@ -33,19 +33,19 @@ export function ConnectionCreateForm({
     onSubmit,
 }: ConnectionCreateFormProps) {
     return (
-        <Card className="w-full lg:max-w-2xl">
-            <CardHeader>
+        <Card className="flex h-full min-h-0 w-full flex-col">
+            <CardHeader className="pb-4">
                 <CardTitle>Create New Connection</CardTitle>
                 <CardDescription>
                     Save connections and inspect live MongoDB collections.
                 </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="flex-1">
                 <form
                     onSubmit={(event) => {
                         void onSubmit(event);
                     }}
-                    className="mt-5 space-y-4"
+                    className="flex h-full flex-col gap-4"
                 >
                     <div className="space-y-1.5">
                         <Label htmlFor="connection-name">Connection name</Label>
@@ -113,9 +113,11 @@ export function ConnectionCreateForm({
                         </Alert>
                     ) : null}
 
-                    <Button type="submit" disabled={saving}>
-                        {saving ? 'Saving...' : 'Save Connection'}
-                    </Button>
+                    <div className="mt-auto flex items-center justify-end">
+                        <Button type="submit" disabled={saving}>
+                            {saving ? 'Saving...' : 'Save Connection'}
+                        </Button>
+                    </div>
                 </form>
             </CardContent>
         </Card>

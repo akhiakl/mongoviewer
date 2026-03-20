@@ -13,6 +13,7 @@ type MongoViewerApi = {
     saveConnection(input: SaveConnectionInput): Promise<{ id: string; name: string }>;
     deleteConnection(connectionId: string): Promise<{ activeConnectionId: string | null }>;
     setActiveConnection(connectionId: string): Promise<void>;
+    clearActiveConnection(): Promise<{ activeConnectionId: string | null }>;
     listDatabaseTree(): Promise<DatabaseTreeItem[]>;
     listDocuments(query: DocumentsQuery): Promise<DocumentsResult>;
     pickTlsCertificate(): Promise<string | null>;

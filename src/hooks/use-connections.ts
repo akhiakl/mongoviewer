@@ -62,6 +62,22 @@ export function useConnections() {
         }
     }
 
+    async function clearActiveConnection() {
+        setConnectionError(null);
+
+        try {
+            const result = await mongoViewer.clearActiveConnection();
+            setConnectionsState((current) => ({
+                ...current,
+                activeConnectionId: result.activeConnectionId,
+            }));
+        } catch (error) {
+            const message = error instanceof Error ? error.message : 'Unable to clear the active connection.';
+            setConnectionError(message);
+            throw error;
+        }
+    }
+
     async function removeConnection(connectionId: string) {
         setConnectionError(null);
 
@@ -98,6 +114,7 @@ export function useConnections() {
         refreshConnections,
         saveConnection,
         activateConnection,
+        clearActiveConnection,
         removeConnection,
         pickTlsCertificate,
     };

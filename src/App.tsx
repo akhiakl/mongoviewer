@@ -20,6 +20,7 @@ export default function App() {
     connectionError,
     saveConnection,
     activateConnection,
+    clearActiveConnection,
     removeConnection,
     pickTlsCertificate,
   } = useConnections();
@@ -37,21 +38,22 @@ export default function App() {
     setView('viewer');
   };
 
-  const subtitle = view === 'viewer' ? (activeConnection?.name ?? null) : null;
-
   return (
     <TooltipProvider>
       <div className="flex h-screen flex-col overflow-hidden">
-        <TitleBar platform={platform} subtitle={subtitle} />
-        <div className="flex min-h-0 flex-1 overflow-hidden p-4 md:p-6">
+        <TitleBar platform={platform} />
+        <div className="flex min-h-0 flex-1 overflow-hidden p-2 md:p-3">
           {view === 'viewer' && connectionsState.activeConnectionId ? (
             <MongoViewerClient
               activeConnectionId={connectionsState.activeConnectionId}
               activeConnectionName={activeConnection?.name ?? null}
-              onBack={() => setView('connections')}
+              onBack={async () => {
+                await clearActiveConnection();
+                setView('connections');
+              }}
             />
           ) : (
-            <div className="flex min-h-full items-center justify-center">
+            <div className="flex min-h-0 flex-1">
               <ConnectionHome
                 connectionsState={connectionsState}
                 loadingConnections={loadingConnections}
