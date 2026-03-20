@@ -57,6 +57,25 @@ function serializeDocument(document: SerializableRecord) {
   return EJSON.serialize(document, { relaxed: true }) as SerializableRecord;
 }
 
+function parseMongoFilter(mongoQuery: string | undefined) {
+  const normalizedQuery = mongoQuery?.trim();
+  if (!normalizedQuery) {
+    return {};
+  }
+
+  try {
+    const parsed = EJSON.parse(normalizedQuery) as unknown;
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      throw new Error('Mongo query must be a JSON object.');
+    }
+
+    return parsed as Record<string, unknown>;
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Invalid query.';
+    throw new Error(`Invalid Mongo query: ${message}`, { cause: error });
+  }
+}
+
 export async function listDatabaseNames(uri: string) {
   const client = await getMongoClient(uri);
   const { databases } = await client.db().admin().listDatabases();
@@ -90,14 +109,15 @@ export async function listDocuments(uri: string, query: DocumentsQuery): Promise
   const pageSize = Math.min(parsePositiveInt(query.pageSize, DEFAULT_PAGE_SIZE), MAX_PAGE_SIZE);
   const client = await getMongoClient(uri);
   const collection = client.db(query.db).collection(query.collection);
+  const filter = parseMongoFilter(query.mongoQuery);
 
   const [records, total] = await Promise.all([
     collection
-      .find({})
+      .find(filter)
       .skip((page - 1) * pageSize)
       .limit(pageSize)
       .toArray(),
-    collection.estimatedDocumentCount(),
+    collection.countDocuments(filter),
   ]);
 
   return {

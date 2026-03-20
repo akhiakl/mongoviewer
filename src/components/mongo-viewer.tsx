@@ -1,9 +1,11 @@
-import { ArrowLeft, Braces, Table2 } from "lucide-react"
-import React, { useState } from "react"
+import { ArrowLeft, Braces, Search, Table2 } from "lucide-react"
+import React, { useMemo, useState } from "react"
 
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { DatabasesSidebar } from "@/components/mongo-viewer/databases-sidebar"
 import { useCollectionDocuments } from "@/components/mongo-viewer/hooks/use-collection-documents"
@@ -43,6 +45,9 @@ export function MongoViewerClient({ activeConnectionId, activeConnectionName, on
     const [selection, setSelection] = useState<Selection | null>(null)
     const [page, setPage] = useState(1)
     const [viewMode, setViewMode] = useState<ViewMode>("table")
+    const [quickFilter, setQuickFilter] = useState("")
+    const [queryDraft, setQueryDraft] = useState("")
+    const [appliedMongoQuery, setAppliedMongoQuery] = useState("")
 
     const pageSize = 50
 
@@ -52,12 +57,28 @@ export function MongoViewerClient({ activeConnectionId, activeConnectionName, on
         selection,
         page,
         pageSize,
+        mongoQuery: appliedMongoQuery || undefined,
     })
+
+    const filteredRecords = useMemo(() => {
+        const normalizedFilter = quickFilter.trim().toLowerCase()
+        if (!normalizedFilter) {
+            return records
+        }
+
+        return records.filter((record) => JSON.stringify(record).toLowerCase().includes(normalizedFilter))
+    }, [quickFilter, records])
 
     React.useEffect(() => {
         setSelection((current) => pickSelection(tree, current))
         setPage(1)
     }, [tree])
+
+    React.useEffect(() => {
+        setQuickFilter("")
+        setQueryDraft("")
+        setAppliedMongoQuery("")
+    }, [selection?.collection, selection?.db])
 
     const totalPages = Math.max(1, Math.ceil(total / pageSize))
     const error = docsError ?? treeError
@@ -97,6 +118,50 @@ export function MongoViewerClient({ activeConnectionId, activeConnectionName, on
                             <p className="mt-1 text-sm text-muted-foreground">
                                 {activeConnectionName ? `Active connection: ${activeConnectionName}` : "Select a saved connection to start browsing."}
                             </p>
+                            <div className="mt-3 flex flex-col gap-2 md:flex-row md:items-start">
+                                <div className="relative w-full md:max-w-sm">
+                                    <Search className="pointer-events-none absolute top-2 left-2.5 size-4 text-muted-foreground" />
+                                    <Input
+                                        value={quickFilter}
+                                        onChange={(event) => setQuickFilter(event.target.value)}
+                                        placeholder="Quick filter current page records"
+                                        className="pl-8"
+                                    />
+                                </div>
+                                <div className="w-full md:max-w-lg">
+                                    <Textarea
+                                        value={queryDraft}
+                                        onChange={(event) => setQueryDraft(event.target.value)}
+                                        className="min-h-16"
+                                        placeholder='Mongo query JSON, e.g. { "status": "active" }'
+                                    />
+                                    <div className="mt-2 flex items-center gap-2">
+                                        <Button
+                                            size="sm"
+                                            variant="outline"
+                                            onClick={() => {
+                                                setAppliedMongoQuery(queryDraft.trim())
+                                                setPage(1)
+                                            }}
+                                            disabled={!selection || loadingDocs}
+                                        >
+                                            Apply Query
+                                        </Button>
+                                        <Button
+                                            size="sm"
+                                            variant="ghost"
+                                            onClick={() => {
+                                                setQueryDraft("")
+                                                setAppliedMongoQuery("")
+                                                setPage(1)
+                                            }}
+                                            disabled={!queryDraft && !appliedMongoQuery}
+                                        >
+                                            Reset Query
+                                        </Button>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                         <div className="flex items-center gap-3">
                             <ToggleGroup
@@ -122,7 +187,13 @@ export function MongoViewerClient({ activeConnectionId, activeConnectionName, on
                             <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                 <Table2 className="size-4" />
                                 {selection ? (
-                                    <Badge variant="secondary">{total.toLocaleString()} records</Badge>
+                                    <div className="flex items-center gap-2">
+                                        <Badge variant="secondary">{total.toLocaleString()} records</Badge>
+                                        {quickFilter ? (
+                                            <Badge variant="outline">{filteredRecords.length.toLocaleString()} shown</Badge>
+                                        ) : null}
+                                        {appliedMongoQuery ? <Badge variant="outline">query active</Badge> : null}
+                                    </div>
                                 ) : (
                                     <span>No collection selected</span>
                                 )}
@@ -161,8 +232,14 @@ export function MongoViewerClient({ activeConnectionId, activeConnectionName, on
                             </div>
                         ) : null}
 
-                        {!loadingDocs && selection && records.length > 0 ? (
-                            viewMode === "table" ? <RecordsTable records={records} /> : <RecordsJsonList records={records} />
+                        {!loadingDocs && selection && records.length > 0 && filteredRecords.length === 0 ? (
+                            <div className="flex h-48 items-center justify-center text-sm text-muted-foreground">
+                                No records match the current quick filter.
+                            </div>
+                        ) : null}
+
+                        {!loadingDocs && selection && filteredRecords.length > 0 ? (
+                            viewMode === "table" ? <RecordsTable records={filteredRecords} /> : <RecordsJsonList records={filteredRecords} />
                         ) : null}
                     </div>
 

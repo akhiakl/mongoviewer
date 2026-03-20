@@ -8,6 +8,7 @@ type UseCollectionDocumentsArgs = {
   selection: Selection | null;
   page: number;
   pageSize: number;
+  mongoQuery?: string;
 };
 
 export function useCollectionDocuments({
@@ -15,6 +16,7 @@ export function useCollectionDocuments({
   selection,
   page,
   pageSize,
+  mongoQuery,
 }: UseCollectionDocumentsArgs) {
   const [response, setResponse] = useState<DocumentsResponse | null>(null);
   const [loadingDocs, setLoadingDocs] = useState(false);
@@ -40,6 +42,7 @@ export function useCollectionDocuments({
           collection: selection.collection,
           page,
           pageSize,
+          mongoQuery,
         });
 
         if (!cancelled) {
@@ -62,7 +65,7 @@ export function useCollectionDocuments({
     return () => {
       cancelled = true;
     };
-  }, [activeConnectionId, page, pageSize, selection]);
+  }, [activeConnectionId, mongoQuery, page, pageSize, selection]);
 
   return {
     records: response?.records ?? [],

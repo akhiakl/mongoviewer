@@ -28,6 +28,7 @@ export type Selection = {
 export type DocumentsQuery = Selection & {
   page?: number;
   pageSize?: number;
+  mongoQuery?: string;
 };
 
 export type SerializableRecord = Record<string, unknown>;
