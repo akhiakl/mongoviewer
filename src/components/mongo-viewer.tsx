@@ -1,18 +1,18 @@
-import { ArrowLeft, Braces, Search, Table2 } from "lucide-react"
 import React, { useMemo, useState } from "react"
 
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { DatabasesSidebar } from "@/components/mongo-viewer/databases-sidebar"
 import { useCollectionDocuments } from "@/components/mongo-viewer/hooks/use-collection-documents"
 import { useDatabasesTree } from "@/components/mongo-viewer/hooks/use-databases-tree"
+import { useQueryPresets } from "@/components/mongo-viewer/hooks/use-query-presets"
 import { RecordsJsonList } from "@/components/mongo-viewer/records-json-list"
 import { RecordsTable } from "@/components/mongo-viewer/records-table"
+import { ViewerHeader } from "@/components/mongo-viewer/viewer-header"
 import type { DatabaseTreeItem, Selection, ViewMode } from "@/components/mongo-viewer/types"
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
+import { Braces, Table2 } from "lucide-react"
 import { SidebarInset, SidebarProvider } from "./ui/sidebar"
 
 type MongoViewerClientProps = {
@@ -44,12 +44,14 @@ function pickSelection(tree: DatabaseTreeItem[], current: Selection | null) {
 export function MongoViewerClient({ activeConnectionId, activeConnectionName, onBack }: MongoViewerClientProps) {
     const [selection, setSelection] = useState<Selection | null>(null)
     const [page, setPage] = useState(1)
+    const [pageSize, setPageSize] = useState(50)
     const [viewMode, setViewMode] = useState<ViewMode>("table")
     const [quickFilter, setQuickFilter] = useState("")
     const [queryDraft, setQueryDraft] = useState("")
     const [appliedMongoQuery, setAppliedMongoQuery] = useState("")
+    const [presetName, setPresetName] = useState("")
 
-    const pageSize = 50
+    const { presets, deletePreset, getPresetByName, savePreset } = useQueryPresets(selection)
 
     const { tree, loadingTree, treeError, refreshTree } = useDatabasesTree(activeConnectionId)
     const { records, total, loadingDocs, docsError } = useCollectionDocuments({
@@ -78,14 +80,55 @@ export function MongoViewerClient({ activeConnectionId, activeConnectionName, on
         setQuickFilter("")
         setQueryDraft("")
         setAppliedMongoQuery("")
+        setPresetName("")
+        setPageSize(50)
     }, [selection?.collection, selection?.db])
 
     const totalPages = Math.max(1, Math.ceil(total / pageSize))
     const error = docsError ?? treeError
+    const showEmptyConnectionState = !activeConnectionId
+    const showEmptySelectionState = activeConnectionId && !selection
+    const showLoadingState = loadingDocs
+    const showNoRecordsState = !loadingDocs && selection && records.length === 0
+    const showNoMatchesState = !loadingDocs && selection && records.length > 0 && filteredRecords.length === 0
+    const showRecords = !loadingDocs && selection && filteredRecords.length > 0
+
+    const handleApplyQuery = () => {
+        setAppliedMongoQuery(queryDraft.trim())
+        setPage(1)
+    }
+
+    const handleResetQuery = () => {
+        setQueryDraft("")
+        setAppliedMongoQuery("")
+        setPresetName("")
+        setPage(1)
+    }
+
+    const handleSavePreset = () => {
+        if (savePreset(presetName, queryDraft)) {
+            setPresetName(presetName.trim())
+        }
+    }
+
+    const handleDeletePreset = () => {
+        if (deletePreset(presetName)) {
+            setPresetName("")
+        }
+    }
+
+    const handlePresetSelect = (name: string) => {
+        setPresetName(name)
+
+        const preset = getPresetByName(name)
+        if (preset) {
+            setQueryDraft(preset.query)
+        }
+    }
 
     return (
-        <section className="overflow-hidden flex-1 flex flex-col">
-            <SidebarProvider className="flex-1 flex">
+        <section className="flex min-h-0 flex-1 flex-col overflow-hidden">
+            <SidebarProvider className="flex min-h-0 flex-1">
                 <DatabasesSidebar
                     tree={tree}
                     loadingTree={loadingTree}
@@ -97,109 +140,27 @@ export function MongoViewerClient({ activeConnectionId, activeConnectionName, on
                         setPage(1)
                     }}
                 />
-                <SidebarInset>
-                    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-4 py-3 md:px-6">
-                        <div>
-                            {onBack ? (
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="mb-2"
-                                    onClick={onBack}
-                                >
-                                    <ArrowLeft className="size-4" />
-                                    Connections
-                                </Button>
-                            ) : null}
-                            <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Collection</p>
-                            <h1 className="text-lg font-semibold text-foreground md:text-xl">
-                                {selection ? `${selection.db} / ${selection.collection}` : "Pick a collection"}
-                            </h1>
-                            <p className="mt-1 text-sm text-muted-foreground">
-                                {activeConnectionName ? `Active connection: ${activeConnectionName}` : "Select a saved connection to start browsing."}
-                            </p>
-                            <div className="mt-3 flex flex-col gap-2 md:flex-row md:items-start">
-                                <div className="relative w-full md:max-w-sm">
-                                    <Search className="pointer-events-none absolute top-2 left-2.5 size-4 text-muted-foreground" />
-                                    <Input
-                                        value={quickFilter}
-                                        onChange={(event) => setQuickFilter(event.target.value)}
-                                        placeholder="Quick filter current page records"
-                                        className="pl-8"
-                                    />
-                                </div>
-                                <div className="w-full md:max-w-lg">
-                                    <Textarea
-                                        value={queryDraft}
-                                        onChange={(event) => setQueryDraft(event.target.value)}
-                                        className="min-h-16"
-                                        placeholder='Mongo query JSON, e.g. { "status": "active" }'
-                                    />
-                                    <div className="mt-2 flex items-center gap-2">
-                                        <Button
-                                            size="sm"
-                                            variant="outline"
-                                            onClick={() => {
-                                                setAppliedMongoQuery(queryDraft.trim())
-                                                setPage(1)
-                                            }}
-                                            disabled={!selection || loadingDocs}
-                                        >
-                                            Apply Query
-                                        </Button>
-                                        <Button
-                                            size="sm"
-                                            variant="ghost"
-                                            onClick={() => {
-                                                setQueryDraft("")
-                                                setAppliedMongoQuery("")
-                                                setPage(1)
-                                            }}
-                                            disabled={!queryDraft && !appliedMongoQuery}
-                                        >
-                                            Reset Query
-                                        </Button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div className="flex items-center gap-3">
-                            <ToggleGroup
-                                type="single"
-                                value={viewMode}
-                                onValueChange={(value) => {
-                                    if (value === "table" || value === "json") {
-                                        setViewMode(value)
-                                    }
-                                }}
-                                variant="outline"
-                                size="sm"
-                            >
-                                <ToggleGroupItem value="table" aria-label="Table view">
-                                    <Table2 className="size-3.5" />
-                                    Table
-                                </ToggleGroupItem>
-                                <ToggleGroupItem value="json" aria-label="JSON view">
-                                    <Braces className="size-3.5" />
-                                    JSON
-                                </ToggleGroupItem>
-                            </ToggleGroup>
-                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                <Table2 className="size-4" />
-                                {selection ? (
-                                    <div className="flex items-center gap-2">
-                                        <Badge variant="secondary">{total.toLocaleString()} records</Badge>
-                                        {quickFilter ? (
-                                            <Badge variant="outline">{filteredRecords.length.toLocaleString()} shown</Badge>
-                                        ) : null}
-                                        {appliedMongoQuery ? <Badge variant="outline">query active</Badge> : null}
-                                    </div>
-                                ) : (
-                                    <span>No collection selected</span>
-                                )}
-                            </div>
-                        </div>
-                    </div>
+                <SidebarInset className="min-h-0 overflow-hidden">
+                    <ViewerHeader
+                        activeConnectionName={activeConnectionName}
+                        appliedMongoQuery={appliedMongoQuery}
+                        filteredRecordsCount={filteredRecords.length}
+                        loadingDocs={loadingDocs}
+                        onApplyQuery={handleApplyQuery}
+                        onBack={onBack}
+                        onDeletePreset={handleDeletePreset}
+                        onPresetNameChange={setPresetName}
+                        onPresetSelect={handlePresetSelect}
+                        onQueryDraftChange={setQueryDraft}
+                        onQuickFilterChange={setQuickFilter}
+                        onResetQuery={handleResetQuery}
+                        onSavePreset={handleSavePreset}
+                        presetName={presetName}
+                        presets={presets}
+                        queryDraft={queryDraft}
+                        quickFilter={quickFilter}
+                        selection={selection}
+                    />
 
                     {error ? (
                         <Alert variant="destructive" className="mx-4 mt-4 md:mx-6">
@@ -207,47 +168,105 @@ export function MongoViewerClient({ activeConnectionId, activeConnectionName, on
                         </Alert>
                     ) : null}
 
-                    <div className="overflow-auto px-4 py-4 md:px-6">
-                        {!activeConnectionId ? (
-                            <div className="flex h-48 items-center justify-center text-sm text-muted-foreground">
+                    <div className="flex min-h-0 flex-1 flex-col overflow-hidden px-4 py-4 md:px-6">
+                        {selection ? (
+                            <div className="mb-3 flex items-center justify-between gap-3">
+                                <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+                                    <span>View</span>
+                                </div>
+                                <ToggleGroup
+                                    type="single"
+                                    value={viewMode}
+                                    onValueChange={(value) => {
+                                        if (value === "table" || value === "json") {
+                                            setViewMode(value)
+                                        }
+                                    }}
+                                    variant="outline"
+                                    size="sm"
+                                >
+                                    <ToggleGroupItem value="table" aria-label="Table view">
+                                        <Table2 className="size-3.5" />
+                                        Table
+                                    </ToggleGroupItem>
+                                    <ToggleGroupItem value="json" aria-label="JSON view">
+                                        <Braces className="size-3.5" />
+                                        JSON
+                                    </ToggleGroupItem>
+                                </ToggleGroup>
+                            </div>
+                        ) : null}
+
+                        {showEmptyConnectionState ? (
+                            <div className="flex flex-1 items-center justify-center text-sm text-muted-foreground">
                                 Save or activate a connection to start browsing.
                             </div>
                         ) : null}
 
-                        {activeConnectionId && !selection ? (
-                            <div className="flex h-48 items-center justify-center text-sm text-muted-foreground">
+                        {showEmptySelectionState ? (
+                            <div className="flex flex-1 items-center justify-center text-sm text-muted-foreground">
                                 Select a collection from the sidebar to view records.
                             </div>
                         ) : null}
 
-                        {loadingDocs ? (
-                            <div className="flex h-48 items-center justify-center gap-2 text-sm text-muted-foreground">
+                        {showLoadingState ? (
+                            <div className="flex flex-1 items-center justify-center gap-2 text-sm text-muted-foreground">
                                 Loading records...
                             </div>
                         ) : null}
 
-                        {!loadingDocs && selection && records.length === 0 ? (
-                            <div className="flex h-48 items-center justify-center text-sm text-muted-foreground">
+                        {showNoRecordsState ? (
+                            <div className="flex flex-1 items-center justify-center text-sm text-muted-foreground">
                                 No records for this collection.
                             </div>
                         ) : null}
 
-                        {!loadingDocs && selection && records.length > 0 && filteredRecords.length === 0 ? (
-                            <div className="flex h-48 items-center justify-center text-sm text-muted-foreground">
+                        {showNoMatchesState ? (
+                            <div className="flex flex-1 items-center justify-center text-sm text-muted-foreground">
                                 No records match the current quick filter.
                             </div>
                         ) : null}
 
-                        {!loadingDocs && selection && filteredRecords.length > 0 ? (
-                            viewMode === "table" ? <RecordsTable records={filteredRecords} /> : <RecordsJsonList records={filteredRecords} />
+                        {showRecords ? (
+                            viewMode === "table" ? (
+                                <div className="min-h-0 flex-1">
+                                    <RecordsTable records={filteredRecords} />
+                                </div>
+                            ) : (
+                                <div className="min-h-0 flex-1 overflow-auto pr-1">
+                                    <RecordsJsonList records={filteredRecords} />
+                                </div>
+                            )
                         ) : null}
                     </div>
 
                     <div className="flex items-center justify-between border-t border-border px-4 py-3 md:px-6">
-                        <p className="text-xs text-muted-foreground">
-                            Page {page} of {totalPages}
-                        </p>
+                        <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                            <span>
+                                Page {page} of {totalPages}
+                            </span>
+                            {selection ? <Badge variant="secondary">{total.toLocaleString()} records</Badge> : null}
+                        </div>
                         <div className="flex items-center gap-2">
+                            <label htmlFor="page-size" className="text-xs text-muted-foreground">
+                                Rows
+                            </label>
+                            <select
+                                id="page-size"
+                                aria-label="Rows per page"
+                                value={String(pageSize)}
+                                onChange={(event) => {
+                                    setPageSize(Number(event.target.value))
+                                    setPage(1)
+                                }}
+                                className="h-8 rounded-md border border-input bg-background px-2 text-sm"
+                            >
+                                {[50, 100, 150, 200].map((size) => (
+                                    <option key={size} value={size}>
+                                        {size}
+                                    </option>
+                                ))}
+                            </select>
                             <Button
                                 variant="outline"
                                 size="sm"

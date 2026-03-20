@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  getPresetStorageKey,
   parseStoredPresets,
   removePresetByName,
   toStoredPresets,
@@ -42,5 +43,10 @@ describe('query preset helpers', () => {
     const presets = [{ name: 'active', query: '{"status":"active"}' }];
     const stored = toStoredPresets(presets);
     expect(parseStoredPresets(stored)).toEqual(presets);
+  });
+
+  it('builds a collection-scoped storage key', () => {
+    expect(getPresetStorageKey({ db: 'app', collection: 'users' })).toBe('mongo-viewer:query-presets:app.users');
+    expect(getPresetStorageKey(null)).toBeNull();
   });
 });

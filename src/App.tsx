@@ -43,7 +43,7 @@ export default function App() {
     <TooltipProvider>
       <div className="flex h-screen flex-col overflow-hidden">
         <TitleBar platform={platform} subtitle={subtitle} />
-        <div className={`flex-1 overflow-hidden p-4 md:p-6`}>
+        <div className="flex min-h-0 flex-1 overflow-hidden p-4 md:p-6">
           {view === 'viewer' && connectionsState.activeConnectionId ? (
             <MongoViewerClient
               activeConnectionId={connectionsState.activeConnectionId}

@@ -4,12 +4,13 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import type { DatabaseTreeItem, Selection } from "@/components/mongo-viewer/types"
-import { Sidebar, SidebarContent, SidebarGroup, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarMenuSub, SidebarMenuSubButton, SidebarMenuSubItem, SidebarRail } from "@/components/ui/sidebar"
+import { Sidebar, SidebarContent, SidebarGroup, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarMenuSub, SidebarMenuSubButton, SidebarMenuSubItem, SidebarRail, SidebarInput } from "@/components/ui/sidebar"
 import {
     Collapsible,
     CollapsibleContent,
     CollapsibleTrigger,
 } from "@/components/ui/collapsible"
+import { useState, useMemo } from "react"
 
 type DatabasesSidebarProps = {
     tree: DatabaseTreeItem[]
@@ -28,13 +29,40 @@ export function DatabasesSidebar({
     onRefresh,
     onSelectCollection,
 }: DatabasesSidebarProps) {
+    const [search, setSearch] = useState("");
+
+    // Filter tree based on search
+    const filteredTree = useMemo(() => {
+        if (!search.trim()) return tree;
+        const lower = search.trim().toLowerCase();
+        return tree
+            .map((db) => {
+                // Match DB name or any collection
+                if (db.name.toLowerCase().includes(lower)) return db;
+                const filteredCollections = db.collections.filter((c) => c.toLowerCase().includes(lower));
+                if (filteredCollections.length > 0) {
+                    return { ...db, collections: filteredCollections };
+                }
+                return null;
+            })
+            .filter(Boolean) as typeof tree;
+    }, [tree, search]);
     return (
         <Sidebar collapsible="none" className="w-64 shrink-0 min-h-full">
-            <SidebarHeader className="flex flex-row justify-between">
-                <h2 className="text-sm font-semibold uppercase tracking-[0.16em] text-muted-foreground">Databases</h2>
-                <Button variant="outline" size="icon-xs" onClick={onRefresh}>
-                    <RefreshCcw className="size-3.5" />
-                </Button>
+            <SidebarHeader className="flex flex-col gap-2">
+                <div className="flex flex-row justify-between items-center">
+                    <h2 className="text-sm font-semibold uppercase tracking-[0.16em] text-muted-foreground">Databases</h2>
+                    <Button variant="outline" size="icon-xs" onClick={onRefresh}>
+                        <RefreshCcw className="size-3.5" />
+                    </Button>
+                </div>
+                <SidebarInput
+                    placeholder="Search databases/collections..."
+                    value={search}
+                    onChange={e => setSearch(e.target.value)}
+                    autoFocus={false}
+                    className=""
+                />
             </SidebarHeader>
             <SidebarContent>
                 {treeError ? (
@@ -50,12 +78,12 @@ export function DatabasesSidebar({
                     </div>
                 ) : null}
 
-                {!loadingTree && tree.length === 0 ? (
-                    <p className="px-3 py-4 text-sm text-muted-foreground">No databases found.</p>
+                {!loadingTree && filteredTree.length === 0 ? (
+                    <p className="px-3 py-4 text-sm text-muted-foreground">No databases or collections found.</p>
                 ) : null}
                 <SidebarGroup>
                     <SidebarMenu>
-                        {tree.map((dbItem) => (
+                        {filteredTree.map((dbItem) => (
                             <Collapsible
                                 key={dbItem.name}
                                 asChild

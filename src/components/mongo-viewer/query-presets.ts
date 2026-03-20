@@ -1,7 +1,17 @@
+import type { Selection } from '@/components/mongo-viewer/types';
+
 export type QueryPreset = {
   name: string;
   query: string;
 };
+
+export function getPresetStorageKey(selection: Selection | null) {
+  if (!selection) {
+    return null;
+  }
+
+  return `mongo-viewer:query-presets:${selection.db}.${selection.collection}`;
+}
 
 export function parseStoredPresets(raw: string | null | undefined): QueryPreset[] {
   if (!raw) {
