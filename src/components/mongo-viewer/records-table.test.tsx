@@ -26,6 +26,12 @@ vi.mock("react-window", () => ({
 
 describe("RecordsTable", () => {
     beforeEach(() => {
+        Object.assign(navigator, {
+            clipboard: {
+                writeText: vi.fn().mockResolvedValue(undefined),
+            },
+        })
+
         vi.stubGlobal(
             "ResizeObserver",
             class {
@@ -56,10 +62,18 @@ describe("RecordsTable", () => {
         expect(screen.getByText("2026-01-01T00:00:00.000Z")).toBeInTheDocument()
         expect(screen.getAllByText("Inspect")).toHaveLength(2)
 
-        fireEvent.click(screen.getByRole("cell", { name: "Inspect profile value" }))
+        fireEvent.click(screen.getByRole("button", { name: "Copy name value" }))
+        expect(navigator.clipboard.writeText).toHaveBeenCalledWith("Alice")
+
+        fireEvent.click(screen.getByRole("button", { name: "Inspect profile value" }))
 
         expect(screen.getByText("Inspect profile")).toBeInTheDocument()
         expect(screen.getByText("Record 507f1f77bcf86cd799439011")).toBeInTheDocument()
+
+        fireEvent.click(screen.getByRole("button", { name: "Copy JSON" }))
+        expect(navigator.clipboard.writeText).toHaveBeenCalledWith(
+            JSON.stringify({ city: "Bengaluru", plan: "pro" }, null, 2),
+        )
 
         fireEvent.click(screen.getByRole("button", { name: "Close" }))
 

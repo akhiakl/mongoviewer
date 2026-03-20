@@ -2,8 +2,9 @@ import type { CSSProperties } from "react"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { List, type ListImperativeAPI, type RowComponentProps } from "react-window"
 
+import { RecordsTableCell } from "@/components/mongo-viewer/records-table-cell"
 import { JsonValueInspector } from "@/components/mongo-viewer/json-value-viewer"
-import { formatCellTooltip, formatCellValue, formatEjsonScalar } from "@/lib/document-format"
+import { formatCellValue } from "@/lib/document-format"
 
 type RecordsTableProps = {
     records: Record<string, unknown>[]
@@ -71,18 +72,6 @@ function getDefaultColumnWidth(column: string, type: string) {
     return 180
 }
 
-function isInspectableValue(value: unknown) {
-    if (Array.isArray(value)) {
-        return true
-    }
-
-    if (typeof value === "object" && value !== null) {
-        return formatEjsonScalar(value as Record<string, unknown>) === null
-    }
-
-    return false
-}
-
 function RecordRow({ columns, gridTemplateColumns, index, onInspectCell, records, style }: RowComponentProps<RecordRowProps>) {
     const record = records[index]
 
@@ -97,33 +86,12 @@ function RecordRow({ columns, gridTemplateColumns, index, onInspectCell, records
             }}
         >
             {columns.map((column) => (
-                isInspectableValue(record[column]) ? (
-                    <button
-                        key={`${index}-${column}`}
-                        type="button"
-                        role="cell"
-                        aria-label={`Inspect ${column} value`}
-                        title={formatCellTooltip(record[column])}
-                        className="flex h-full min-w-0 cursor-zoom-in items-start justify-between gap-2 self-stretch border-r border-border px-2 py-2 text-left text-xs text-foreground transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring last:border-r-0"
-                        onClick={() => onInspectCell(column, index)}
-                    >
-                        <div className="line-clamp-2 min-w-0 flex-1 break-words text-[12px] leading-5">
-                            {formatCellValue(record[column])}
-                        </div>
-                        <span className="shrink-0 rounded border border-border bg-muted px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
-                            Inspect
-                        </span>
-                    </button>
-                ) : (
-                    <div
-                        key={`${index}-${column}`}
-                        role="cell"
-                        title={formatCellTooltip(record[column])}
-                        className="flex h-full min-w-0 self-stretch border-r border-border px-2 py-2 text-xs text-foreground last:border-r-0"
-                    >
-                        <div className="line-clamp-2 break-words text-[12px] leading-5">{formatCellValue(record[column])}</div>
-                    </div>
-                )
+                <RecordsTableCell
+                    key={`${index}-${column}`}
+                    column={column}
+                    onInspect={() => onInspectCell(column, index)}
+                    value={record[column]}
+                />
             ))}
         </div>
     )
@@ -328,6 +296,7 @@ export function RecordsTable({ records }: RecordsTableProps) {
                         }
                     }}
                     recordId={inspectedRecordId}
+                    recordValue={inspectedRecord}
                     value={inspectedValue}
                 />
             ) : null}

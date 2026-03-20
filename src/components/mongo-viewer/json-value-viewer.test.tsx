@@ -51,12 +51,21 @@ describe("JsonValueInspector", () => {
                 open={true}
                 onOpenChange={vi.fn()}
                 recordId="doc-1"
+                recordValue={{ _id: "doc-1", profile: { city: "Bengaluru", plan: "pro" } }}
                 value={{ city: "Bengaluru", plan: "pro" }}
             />,
         )
 
         expect(screen.getByText("Inspect profile")).toBeInTheDocument()
         expect(screen.getByText("Record doc-1")).toBeInTheDocument()
+
+        fireEvent.click(screen.getByRole("button", { name: /copy field/i }))
+        expect(navigator.clipboard.writeText).toHaveBeenCalledWith("profile")
+
+        fireEvent.click(screen.getByRole("button", { name: /copy row/i }))
+        expect(navigator.clipboard.writeText).toHaveBeenCalledWith(
+            JSON.stringify({ _id: "doc-1", profile: { city: "Bengaluru", plan: "pro" } }, null, 2),
+        )
 
         fireEvent.click(screen.getByRole("button", { name: /copy json/i }))
 

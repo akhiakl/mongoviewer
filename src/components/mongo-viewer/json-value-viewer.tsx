@@ -1,4 +1,4 @@
-import { ChevronRight, Copy } from "lucide-react"
+import { ChevronRight, Copy, CopyPlus } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -90,10 +90,11 @@ type JsonValueInspectorProps = {
     onOpenChange: (open: boolean) => void
     open: boolean
     recordId?: string
+    recordValue?: Record<string, unknown> | null
     value: unknown
 }
 
-export function JsonValueInspector({ fieldName, onOpenChange, open, recordId, value }: JsonValueInspectorProps) {
+export function JsonValueInspector({ fieldName, onOpenChange, open, recordId, recordValue, value }: JsonValueInspectorProps) {
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent>
@@ -105,15 +106,37 @@ export function JsonValueInspector({ fieldName, onOpenChange, open, recordId, va
                                 {recordId ? `Record ${recordId}` : "Expanded structured value"}
                             </DialogDescription>
                         </div>
-                        <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => void navigator.clipboard?.writeText(JSON.stringify(value, null, 2))}
-                        >
-                            <Copy className="size-4" />
-                            Copy JSON
-                        </Button>
+                        <div className="flex flex-wrap items-center justify-end gap-2">
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => void navigator.clipboard?.writeText(fieldName)}
+                            >
+                                <Copy className="size-4" />
+                                Copy Field
+                            </Button>
+                            {recordValue ? (
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => void navigator.clipboard?.writeText(JSON.stringify(recordValue, null, 2))}
+                                >
+                                    <CopyPlus className="size-4" />
+                                    Copy Row
+                                </Button>
+                            ) : null}
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => void navigator.clipboard?.writeText(JSON.stringify(value, null, 2))}
+                            >
+                                <Copy className="size-4" />
+                                Copy JSON
+                            </Button>
+                        </div>
                     </div>
                 </DialogHeader>
                 <div className="min-h-0 flex-1 overflow-auto p-5">
