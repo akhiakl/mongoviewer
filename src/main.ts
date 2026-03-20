@@ -1,4 +1,4 @@
-import { app, BrowserWindow, dialog, ipcMain } from 'electron';
+import { app, BrowserWindow, dialog, ipcMain, nativeTheme } from 'electron/main';
 import path from 'node:path';
 import started from 'electron-squirrel-startup';
 
@@ -107,6 +107,25 @@ ipcMain.handle('dialog:pick-tls-certificate', async () => {
 });
 
 const createWindow = () => {
+  const isMac = process.platform === 'darwin';
+  const getTitleBarOverlay = () => {
+    if (nativeTheme.shouldUseDarkColors) {
+      return {
+        // Matches dark mode Tailwind tokens: bg-background + text-foreground
+        color: '#09090b',
+        symbolColor: '#fafafa',
+        height: 40,
+      };
+    }
+
+    return {
+      // Matches light mode Tailwind tokens: bg-background + text-foreground
+      color: '#ffffff',
+      symbolColor: '#09090b',
+      height: 40,
+    };
+  };
+
   // Create the browser window.
   const mainWindow = new BrowserWindow({
     width: 980,
@@ -115,12 +134,10 @@ const createWindow = () => {
     minHeight: 620,
     // Hide the default title bar but keep native window controls.
     titleBarStyle: 'hidden',
-    ...(process.platform !== 'darwin'
+    ...(!isMac
       ? {
         // Show native controls on Windows/Linux while keeping custom content area.
-        titleBarOverlay: {
-          height: 40,
-        },
+        titleBarOverlay: getTitleBarOverlay(),
       }
       : {}),
     webPreferences: {
@@ -135,6 +152,17 @@ const createWindow = () => {
     mainWindow.loadFile(
       path.join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html`),
     );
+  }
+
+  if (!isMac) {
+    const onThemeUpdated = () => {
+      mainWindow.setTitleBarOverlay(getTitleBarOverlay());
+    };
+
+    nativeTheme.on('updated', onThemeUpdated);
+    mainWindow.on('closed', () => {
+      nativeTheme.removeListener('updated', onThemeUpdated);
+    });
   }
 };
 

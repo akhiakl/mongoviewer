@@ -1,7 +1,10 @@
 import { ArrowLeft, Braces, Table2 } from "lucide-react"
 import React, { useState } from "react"
 
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { DatabasesSidebar } from "@/components/mongo-viewer/databases-sidebar"
 import { useCollectionDocuments } from "@/components/mongo-viewer/hooks/use-collection-documents"
 import { useDatabasesTree } from "@/components/mongo-viewer/hooks/use-databases-tree"
@@ -74,7 +77,7 @@ export function MongoViewerClient({ activeConnectionId, activeConnectionName, on
                     }}
                 />
                 <SidebarInset>
-                    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-4 py-3 md:px-6">
+                    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-4 py-3 md:px-6">
                         <div>
                             {onBack ? (
                                 <Button
@@ -87,69 +90,73 @@ export function MongoViewerClient({ activeConnectionId, activeConnectionName, on
                                     Connections
                                 </Button>
                             ) : null}
-                            <p className="text-xs uppercase tracking-[0.16em] text-slate-500">Collection</p>
-                            <h1 className="text-lg font-semibold text-slate-800 md:text-xl">
+                            <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Collection</p>
+                            <h1 className="text-lg font-semibold text-foreground md:text-xl">
                                 {selection ? `${selection.db} / ${selection.collection}` : "Pick a collection"}
                             </h1>
-                            <p className="mt-1 text-sm text-slate-500">
+                            <p className="mt-1 text-sm text-muted-foreground">
                                 {activeConnectionName ? `Active connection: ${activeConnectionName}` : "Select a saved connection to start browsing."}
                             </p>
                         </div>
                         <div className="flex items-center gap-3">
-                            <div className="inline-flex rounded-lg border border-slate-200 bg-slate-50 p-0.5">
-                                <button
-                                    type="button"
-                                    onClick={() => setViewMode("table")}
-                                    className={`inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium transition ${viewMode === "table" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"
-                                        }`}
-                                >
+                            <ToggleGroup
+                                type="single"
+                                value={viewMode}
+                                onValueChange={(value) => {
+                                    if (value === "table" || value === "json") {
+                                        setViewMode(value)
+                                    }
+                                }}
+                                variant="outline"
+                                size="sm"
+                            >
+                                <ToggleGroupItem value="table" aria-label="Table view">
                                     <Table2 className="size-3.5" />
                                     Table
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => setViewMode("json")}
-                                    className={`inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium transition ${viewMode === "json" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"
-                                        }`}
-                                >
+                                </ToggleGroupItem>
+                                <ToggleGroupItem value="json" aria-label="JSON view">
                                     <Braces className="size-3.5" />
                                     JSON
-                                </button>
-                            </div>
-                            <div className="flex items-center gap-2 text-sm text-slate-600">
+                                </ToggleGroupItem>
+                            </ToggleGroup>
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                 <Table2 className="size-4" />
-                                <span>{selection ? `${total.toLocaleString()} records` : "No collection selected"}</span>
+                                {selection ? (
+                                    <Badge variant="secondary">{total.toLocaleString()} records</Badge>
+                                ) : (
+                                    <span>No collection selected</span>
+                                )}
                             </div>
                         </div>
                     </div>
 
                     {error ? (
-                        <div className="mx-4 mt-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 md:mx-6">
-                            {error}
-                        </div>
+                        <Alert variant="destructive" className="mx-4 mt-4 md:mx-6">
+                            <AlertDescription>{error}</AlertDescription>
+                        </Alert>
                     ) : null}
 
                     <div className="overflow-auto px-4 py-4 md:px-6">
                         {!activeConnectionId ? (
-                            <div className="flex h-48 items-center justify-center text-sm text-slate-500">
+                            <div className="flex h-48 items-center justify-center text-sm text-muted-foreground">
                                 Save or activate a connection to start browsing.
                             </div>
                         ) : null}
 
                         {activeConnectionId && !selection ? (
-                            <div className="flex h-48 items-center justify-center text-sm text-slate-500">
+                            <div className="flex h-48 items-center justify-center text-sm text-muted-foreground">
                                 Select a collection from the sidebar to view records.
                             </div>
                         ) : null}
 
                         {loadingDocs ? (
-                            <div className="flex h-48 items-center justify-center gap-2 text-sm text-slate-500">
+                            <div className="flex h-48 items-center justify-center gap-2 text-sm text-muted-foreground">
                                 Loading records...
                             </div>
                         ) : null}
 
                         {!loadingDocs && selection && records.length === 0 ? (
-                            <div className="flex h-48 items-center justify-center text-sm text-slate-500">
+                            <div className="flex h-48 items-center justify-center text-sm text-muted-foreground">
                                 No records for this collection.
                             </div>
                         ) : null}
@@ -159,8 +166,8 @@ export function MongoViewerClient({ activeConnectionId, activeConnectionName, on
                         ) : null}
                     </div>
 
-                    <div className="flex items-center justify-between border-t border-slate-200 px-4 py-3 md:px-6">
-                        <p className="text-xs text-slate-500">
+                    <div className="flex items-center justify-between border-t border-border px-4 py-3 md:px-6">
+                        <p className="text-xs text-muted-foreground">
                             Page {page} of {totalPages}
                         </p>
                         <div className="flex items-center gap-2">
