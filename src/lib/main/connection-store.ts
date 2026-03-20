@@ -1,9 +1,10 @@
 import { randomUUID } from 'node:crypto';
-import { mkdir, readFile, unlink, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
-import { app } from 'electron';
+import { app } from 'electron/main';
 
 import type { ConnectionListItem, ConnectionsState } from '../mongo-types';
+import { removeTlsCertificate } from './tls-certificate-service';
 
 type StoredConnection = ConnectionListItem & {
     uri: string;
@@ -149,13 +150,7 @@ export async function deleteConnection(connectionId: string) {
             store.activeConnectionId = nextConnections[0]?.id ?? null;
         }
 
-        if (target.tlsCertificatePath) {
-            await unlink(target.tlsCertificatePath).catch((error: NodeJS.ErrnoException) => {
-                if (error.code !== 'ENOENT') {
-                    throw error;
-                }
-            });
-        }
+        await removeTlsCertificate(target.tlsCertificatePath);
 
         return {
             activeConnectionId: store.activeConnectionId,
