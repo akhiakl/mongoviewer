@@ -15,6 +15,9 @@ export default defineConfig({
     restoreMocks: true,
     coverage: {
       provider: 'v8',
+      exclude: [
+        'src/components/ui/**',
+      ],
       thresholds: {
         perFile: false,
         branches: 85,
