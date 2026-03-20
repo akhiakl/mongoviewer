@@ -4,22 +4,30 @@ import { describe, expect, it, vi } from 'vitest';
 vi.mock('@/components/mongo-viewer/query-editor', () => ({
   QueryEditor: ({
     disabled,
+    fieldNames,
+    fieldSamples,
     onChange,
     placeholder,
     value,
   }: {
     disabled?: boolean
+    fieldNames?: string[]
+    fieldSamples?: Record<string, Array<string | number | boolean | null>>
     onChange: (value: string) => void
     placeholder?: string
     value: string
   }) => (
-    <textarea
-      aria-label="Mongo query editor"
-      disabled={disabled}
-      placeholder={placeholder}
-      value={value}
-      onChange={(event) => onChange(event.target.value)}
-    />
+    <div>
+      <textarea
+        aria-label="Mongo query editor"
+        disabled={disabled}
+        placeholder={placeholder}
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+      />
+      <span>Editor fields:{fieldNames?.join(',') ?? ''}</span>
+      <span>Editor sample keys:{Object.keys(fieldSamples ?? {}).join(',')}</span>
+    </div>
   ),
 }));
 
@@ -43,6 +51,8 @@ describe('ViewerHeader', () => {
         onSavePreset={vi.fn()}
         presetName="Active"
         presets={[{ name: 'Active', query: '{"status":"active"}' }]}
+        queryFieldNames={['_id', 'status', 'profile.city']}
+        queryFieldSamples={{ status: ['active', 'disabled'], 'profile.city': ['Bengaluru'] }}
         queryDraft='{"status":"active"}'
         quickFilter="john"
         selection={{ db: 'app', collection: 'users' }}
@@ -53,6 +63,8 @@ describe('ViewerHeader', () => {
     expect(screen.getByText('Active connection: Prod Cluster')).toBeInTheDocument();
     expect(screen.getByText('12 shown')).toBeInTheDocument();
     expect(screen.getByText('query active')).toBeInTheDocument();
+    expect(screen.getByText('Editor fields:_id,status,profile.city')).toBeInTheDocument();
+    expect(screen.getByText('Editor sample keys:status,profile.city')).toBeInTheDocument();
   });
 
   it('forwards filter, query, preset, and action changes', () => {
@@ -81,6 +93,8 @@ describe('ViewerHeader', () => {
         onSavePreset={onSavePreset}
         presetName="Archived"
         presets={[{ name: 'Archived', query: '{"archived":true}' }]}
+        queryFieldNames={['_id', 'archived']}
+        queryFieldSamples={{ archived: [true] }}
         queryDraft='{"status":"active"}'
         quickFilter=""
         selection={{ db: 'app', collection: 'users' }}
@@ -126,6 +140,8 @@ describe('ViewerHeader', () => {
         onSavePreset={vi.fn()}
         presetName=""
         presets={[]}
+        queryFieldNames={[]}
+        queryFieldSamples={{}}
         queryDraft=""
         quickFilter=""
         selection={null}
@@ -137,5 +153,6 @@ describe('ViewerHeader', () => {
     expect(screen.getByRole('button', { name: 'Delete Preset' })).toBeDisabled();
     expect(screen.getByLabelText('Mongo query editor')).toBeDisabled();
     expect(screen.getByText('Filters only the records currently visible on this page. Use Mongo Query below to filter the full collection in the database.')).toBeInTheDocument();
+    expect(screen.getByText(/suggests field names while typing keys, and offers sampled values/i)).toBeInTheDocument();
   });
 });

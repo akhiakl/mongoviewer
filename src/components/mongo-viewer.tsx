@@ -21,6 +21,65 @@ type MongoViewerClientProps = {
     onBack?: () => void
 }
 
+const MAX_AUTOCOMPLETE_RECORDS = 100
+const MAX_AUTOCOMPLETE_DEPTH = 2
+type QuerySampleValue = string | number | boolean | null
+
+function isNestedDocument(value: unknown): value is Record<string, unknown> {
+    return typeof value === "object" && value !== null && !Array.isArray(value)
+}
+
+function isExtendedJsonScalar(value: Record<string, unknown>) {
+    const keys = Object.keys(value)
+    return keys.length > 0 && keys.every((key) => key.startsWith("$"))
+}
+
+function collectFieldPaths(value: unknown, fieldNames: Set<string>, prefix = "", depth = 0) {
+    if (!isNestedDocument(value) || isExtendedJsonScalar(value)) {
+        return
+    }
+
+    for (const [key, nestedValue] of Object.entries(value)) {
+        const nextPath = prefix ? `${prefix}.${key}` : key
+        fieldNames.add(nextPath)
+
+        if (depth < MAX_AUTOCOMPLETE_DEPTH) {
+            collectFieldPaths(nestedValue, fieldNames, nextPath, depth + 1)
+        }
+    }
+}
+
+function isSampleValue(value: unknown): value is QuerySampleValue {
+    return value === null || typeof value === "string" || typeof value === "number" || typeof value === "boolean"
+}
+
+function collectFieldSamples(
+    value: unknown,
+    fieldSamples: Map<string, Set<QuerySampleValue>>,
+    prefix = "",
+    depth = 0,
+) {
+    if (!isNestedDocument(value) || isExtendedJsonScalar(value)) {
+        return
+    }
+
+    for (const [key, nestedValue] of Object.entries(value)) {
+        const nextPath = prefix ? `${prefix}.${key}` : key
+
+        if (isSampleValue(nestedValue)) {
+            const samples = fieldSamples.get(nextPath) ?? new Set<QuerySampleValue>()
+            if (samples.size < 12) {
+                samples.add(nestedValue)
+            }
+            fieldSamples.set(nextPath, samples)
+        }
+
+        if (depth < MAX_AUTOCOMPLETE_DEPTH) {
+            collectFieldSamples(nestedValue, fieldSamples, nextPath, depth + 1)
+        }
+    }
+}
+
 function pickSelection(tree: DatabaseTreeItem[], current: Selection | null) {
     if (current) {
         const matchingDatabase = tree.find((db) => db.name === current.db)
@@ -79,6 +138,31 @@ export function MongoViewerClient({ activeConnectionId, activeConnectionName, on
 
         return records.filter((record) => JSON.stringify(record).toLowerCase().includes(normalizedFilter))
     }, [debouncedQuickFilter, records])
+    const queryFieldNames = useMemo(() => {
+        const nextFieldNames = new Set<string>()
+
+        for (const record of records.slice(0, MAX_AUTOCOMPLETE_RECORDS)) {
+            collectFieldPaths(record, nextFieldNames)
+        }
+
+        const ordered = Array.from(nextFieldNames).sort((left, right) => left.localeCompare(right))
+        if (ordered.includes("_id")) {
+            return ["_id", ...ordered.filter((fieldName) => fieldName !== "_id")]
+        }
+
+        return ordered
+    }, [records])
+    const queryFieldSamples = useMemo(() => {
+        const samplesByField = new Map<string, Set<QuerySampleValue>>()
+
+        for (const record of records.slice(0, MAX_AUTOCOMPLETE_RECORDS)) {
+            collectFieldSamples(record, samplesByField)
+        }
+
+        return Object.fromEntries(
+            Array.from(samplesByField.entries()).map(([fieldName, samples]) => [fieldName, Array.from(samples)]),
+        )
+    }, [records])
 
     React.useEffect(() => {
         setSelection((current) => pickSelection(tree, current))
@@ -185,6 +269,8 @@ export function MongoViewerClient({ activeConnectionId, activeConnectionName, on
                         onSavePreset={handleSavePreset}
                         presetName={presetName}
                         presets={presets}
+                        queryFieldNames={queryFieldNames}
+                        queryFieldSamples={queryFieldSamples}
                         queryDraft={queryDraft}
                         quickFilter={quickFilter}
                         selection={selection}

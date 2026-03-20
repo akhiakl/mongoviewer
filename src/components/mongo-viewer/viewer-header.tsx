@@ -22,6 +22,8 @@ type ViewerHeaderProps = {
     onSavePreset: () => void
     presetName: string
     presets: QueryPreset[]
+    queryFieldNames: string[]
+    queryFieldSamples: Record<string, Array<string | number | boolean | null>>
     queryDraft: string
     quickFilter: string
     selection: Selection | null
@@ -42,6 +44,8 @@ export function ViewerHeader({
     onSavePreset,
     presetName,
     presets,
+    queryFieldNames,
+    queryFieldSamples,
     queryDraft,
     quickFilter,
     selection,
@@ -90,11 +94,13 @@ export function ViewerHeader({
                                 value={queryDraft}
                                 onChange={onQueryDraftChange}
                                 onApplyQuery={onApplyQuery}
+                                fieldNames={queryFieldNames}
+                                fieldSamples={queryFieldSamples}
                                 disabled={loadingDocs || !selection}
                                 placeholder='Mongo query JSON, e.g. { "status": "active" }'
                             />
                             <p className="mt-2 text-xs text-muted-foreground">
-                                Auto-closes quotes and braces. Use <kbd className="rounded border border-border px-1 py-0.5 text-[11px]">Ctrl</kbd> + <kbd className="rounded border border-border px-1 py-0.5 text-[11px]">Enter</kbd> to run.
+                                Auto-closes quotes and braces, suggests field names while typing keys, and offers sampled values from the loaded records while typing plain values. Type <code className="rounded bg-muted px-1 py-0.5 text-[11px]">$</code> for Mongo operators. Use <kbd className="rounded border border-border px-1 py-0.5 text-[11px]">Ctrl</kbd> + <kbd className="rounded border border-border px-1 py-0.5 text-[11px]">Enter</kbd> to run.
                             </p>
                         </div>
                         <div className="grid gap-3 md:grid-cols-[minmax(0,14rem)_minmax(0,1fr)]">

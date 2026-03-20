@@ -9,22 +9,30 @@ const useCollectionDocumentsMock = vi.fn();
 vi.mock('@/components/mongo-viewer/query-editor', () => ({
   QueryEditor: ({
     disabled,
+    fieldNames,
+    fieldSamples,
     onChange,
     placeholder,
     value,
   }: {
     disabled?: boolean
+    fieldNames?: string[]
+    fieldSamples?: Record<string, Array<string | number | boolean | null>>
     onChange: (value: string) => void
     placeholder?: string
     value: string
   }) => (
-    <textarea
-      aria-label="Mongo query editor"
-      disabled={disabled}
-      placeholder={placeholder}
-      value={value}
-      onChange={(event) => onChange(event.target.value)}
-    />
+    <div>
+      <textarea
+        aria-label="Mongo query editor"
+        disabled={disabled}
+        placeholder={placeholder}
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+      />
+      <span>Query fields:{fieldNames?.join(',') ?? ''}</span>
+      <span>Query sample keys:{Object.keys(fieldSamples ?? {}).join(',')}</span>
+    </div>
   ),
 }));
 
@@ -92,10 +100,10 @@ describe('MongoViewerClient', () => {
       }) => ({
         records:
           selection?.collection === 'orders'
-            ? [{ _id: 3, name: 'Order 3' }]
+            ? [{ _id: 3, name: 'Order 3', shipping: { city: 'Delhi' } }]
             : [
-                { _id: 1, name: 'Alice' },
-                { _id: 2, name: 'Bob' },
+                { _id: 1, name: 'Alice', profile: { city: 'Bengaluru' } },
+                { _id: 2, name: 'Bob', status: 'active' },
               ],
         total: mongoQuery ? 1 : 2,
         currentPage: page,
@@ -119,6 +127,8 @@ describe('MongoViewerClient', () => {
     await waitFor(() => {
       expect(screen.getByText('Table Count:2')).toBeInTheDocument();
       expect(screen.getByText('Sidebar Selection:app/users')).toBeInTheDocument();
+      expect(screen.getByText('Query fields:_id,name,profile,profile.city,status')).toBeInTheDocument();
+      expect(screen.getByText('Query sample keys:_id,name,profile.city,status')).toBeInTheDocument();
     });
 
     fireEvent.change(screen.getByPlaceholderText('Filter records already loaded on this page'), {
@@ -168,6 +178,8 @@ describe('MongoViewerClient', () => {
       };
       expect(latestArgs.selection).toEqual({ db: 'app', collection: 'orders' });
       expect(screen.getByText('Sidebar Selection:app/orders')).toBeInTheDocument();
+      expect(screen.getByText('Query fields:_id,name,shipping,shipping.city')).toBeInTheDocument();
+      expect(screen.getByText('Query sample keys:_id,name,shipping.city')).toBeInTheDocument();
     });
   });
 

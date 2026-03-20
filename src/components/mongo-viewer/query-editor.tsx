@@ -1,8 +1,8 @@
-import { autocompletion, closeBrackets, type CompletionContext, type CompletionResult } from "@codemirror/autocomplete"
+import { autocompletion, closeBrackets, startCompletion, type CompletionContext, type CompletionResult } from "@codemirror/autocomplete"
 import { defaultKeymap, history, historyKeymap, indentWithTab } from "@codemirror/commands"
 import { json } from "@codemirror/lang-json"
 import { bracketMatching, foldGutter, HighlightStyle, indentOnInput, syntaxHighlighting } from "@codemirror/language"
-import { EditorSelection } from "@codemirror/state"
+import { EditorSelection, Prec } from "@codemirror/state"
 import { EditorView, keymap } from "@codemirror/view"
 import CodeMirror from "@uiw/react-codemirror"
 import { tags } from "@lezer/highlight"
@@ -10,6 +10,8 @@ import { useMemo } from "react"
 
 type QueryEditorProps = {
     disabled?: boolean
+    fieldNames?: string[]
+    fieldSamples?: Record<string, Array<string | number | boolean | null>>
     onApplyQuery?: () => void
     onChange: (value: string) => void
     placeholder?: string
@@ -42,25 +44,128 @@ const MONGO_COMPLETIONS = [
     "$date",
 ]
 
-function mongoCompletionSource(context: CompletionContext): CompletionResult | null {
-    const word = context.matchBefore(/\$[\w]*/)
-    if (!word && !context.explicit) {
-        return null
+function getPreviousNonWhitespace(text: string, from: number) {
+    for (let index = from - 1; index >= 0; index -= 1) {
+        const character = text[index]
+        if (!character || /\s/.test(character)) {
+            continue
+        }
+
+        return character
     }
 
-    const from = word?.from ?? context.pos
-    const typedValue = word?.text ?? ""
+    return null
+}
 
+function getLastQueryKey(text: string) {
+    const matches = Array.from(text.matchAll(/"([^"]+)"\s*:/g))
+
+    for (let index = matches.length - 1; index >= 0; index -= 1) {
+        const match = matches[index]
+        const key = match[1]
+
+        if (!key.startsWith("$")) {
+            return key
+        }
+    }
+
+    return null
+}
+
+function toValueCompletion(value: string | number | boolean | null) {
     return {
-        from,
-        options: MONGO_COMPLETIONS.filter((option) => option.startsWith(typedValue)).map((option) => ({
-            label: option,
-            type: "keyword",
-        })),
+        label: value === null ? "null" : String(value),
+        type: "text",
+        apply: value === null ? "null" : JSON.stringify(value),
+        detail: "sample value",
+    } as const
+}
+
+function createMongoCompletionSource(
+    fieldNames: string[],
+    fieldSamples: Record<string, Array<string | number | boolean | null>>,
+) {
+    return (context: CompletionContext): CompletionResult | null => {
+        const textBeforeCursor = context.state.sliceDoc(0, context.pos)
+        const operatorWord = context.matchBefore(/\$[\w]*/)
+        const plainWord = context.matchBefore(/(?:true|false|null|-?\d+(?:\.\d+)?|"(?:[^"\\]|\\.)*"|[\w.-]+)?/)
+        const currentWord = operatorWord ?? plainWord
+        const from = currentWord?.from ?? context.pos
+        const to = currentWord?.to ?? context.pos
+        const typedValue = currentWord?.text ?? ""
+        const previousCharacter = getPreviousNonWhitespace(textBeforeCursor, from)
+        const isValueContext = previousCharacter === ":"
+        const isKeyContext = previousCharacter === "{" || previousCharacter === ","
+
+        if (!currentWord && !context.explicit) {
+            return null
+        }
+
+        if (operatorWord) {
+            return {
+                from: operatorWord.from,
+                to: operatorWord.to,
+                options: MONGO_COMPLETIONS.filter((option) => option.startsWith(typedValue)).map((option) => ({
+                    label: option,
+                    type: "keyword",
+                    detail: "operator",
+                })),
+            }
+        }
+
+        const normalizedFieldValue = typedValue.replace(/^"/, "").replace(/"$/, "")
+        const activeField = getLastQueryKey(textBeforeCursor)
+
+        const fieldOptions = isKeyContext
+            ? fieldNames
+                  .filter((fieldName) => !normalizedFieldValue || fieldName.startsWith(normalizedFieldValue))
+                  .slice(0, 100)
+                  .map((fieldName) => ({
+                      label: fieldName,
+                      type: "property",
+                      apply: `"${fieldName}"`,
+                      detail: "field",
+                  }))
+            : []
+
+        const sampledValueOptions =
+            isValueContext && activeField
+                ? (fieldSamples[activeField] ?? [])
+                      .filter((sample) => {
+                          if (typedValue.length === 0) {
+                              return true
+                          }
+
+                          const normalizedSample = sample === null ? "null" : String(sample).toLowerCase()
+                          return normalizedSample.startsWith(typedValue.replace(/^"/, "").toLowerCase())
+                      })
+                      .slice(0, 20)
+                      .map(toValueCompletion)
+                : []
+
+        const options = isValueContext ? sampledValueOptions : fieldOptions
+
+        if (options.length === 0) {
+            return null
+        }
+
+        return {
+            from,
+            to,
+            options,
+        }
     }
 }
 
-export function QueryEditor({ disabled = false, onApplyQuery, onChange, placeholder, value }: QueryEditorProps) {
+export function QueryEditor({
+    disabled = false,
+    fieldNames = [],
+    fieldSamples = {},
+    onApplyQuery,
+    onChange,
+    placeholder,
+    value,
+}: QueryEditorProps) {
     const queryHighlightStyle = useMemo(
         () =>
             HighlightStyle.define([
@@ -76,6 +181,7 @@ export function QueryEditor({ disabled = false, onApplyQuery, onChange, placehol
             ]),
         [],
     )
+    const completionSource = useMemo(() => createMongoCompletionSource(fieldNames, fieldSamples), [fieldNames, fieldSamples])
 
     const extensions = useMemo(
         () => [
@@ -88,27 +194,49 @@ export function QueryEditor({ disabled = false, onApplyQuery, onChange, placehol
             closeBrackets(),
             autocompletion({
                 activateOnTyping: true,
-                override: [mongoCompletionSource],
+                override: [completionSource],
             }),
+            Prec.highest(
+                keymap.of([
+                    {
+                        key: "Ctrl-Enter",
+                        run: () => {
+                            onApplyQuery?.()
+                            return true
+                        },
+                    },
+                    {
+                        key: "Mod-Enter",
+                        run: () => {
+                            onApplyQuery?.()
+                            return true
+                        },
+                    },
+                ]),
+            ),
             keymap.of([
                 ...defaultKeymap,
                 ...historyKeymap,
+                {
+                    key: "Ctrl-Space",
+                    run: (view) => {
+                        startCompletion(view)
+                        return true
+                    },
+                },
                 indentWithTab,
-                {
-                    key: "Ctrl-Enter",
-                    run: () => {
-                        onApplyQuery?.()
-                        return true
-                    },
-                },
-                {
-                    key: "Mod-Enter",
-                    run: () => {
-                        onApplyQuery?.()
-                        return true
-                    },
-                },
             ]),
+            EditorView.domEventHandlers({
+                keydown: (event) => {
+                    if ((event.ctrlKey || event.metaKey) && event.key === "Enter") {
+                        event.preventDefault()
+                        onApplyQuery?.()
+                        return true
+                    }
+
+                    return false
+                },
+            }),
             EditorView.lineWrapping,
             EditorView.theme({
                 "&": {
@@ -118,13 +246,13 @@ export function QueryEditor({ disabled = false, onApplyQuery, onChange, placehol
                     backgroundColor: "var(--background)",
                     color: "var(--foreground)",
                     boxShadow: "0 1px 2px color-mix(in oklch, black 4%, transparent)",
-                    overflow: "hidden",
+                    position: "relative",
                 },
                 ".cm-editor": {
                     backgroundColor: "var(--background) !important",
                     color: "var(--foreground) !important",
                     borderRadius: "inherit",
-                    overflow: "hidden",
+                    overflow: "visible",
                 },
                 "&.cm-focused": {
                     outline: "2px solid var(--ring)",
@@ -169,6 +297,7 @@ export function QueryEditor({ disabled = false, onApplyQuery, onChange, placehol
                     borderRadius: "0.5rem",
                     overflow: "hidden",
                     boxShadow: "0 10px 30px color-mix(in oklch, black 12%, transparent)",
+                    zIndex: "30",
                 },
                 ".cm-tooltip-autocomplete ul": {
                     fontFamily: "inherit",
@@ -182,7 +311,7 @@ export function QueryEditor({ disabled = false, onApplyQuery, onChange, placehol
                 },
             }),
         ],
-        [onApplyQuery, queryHighlightStyle],
+        [completionSource, onApplyQuery, queryHighlightStyle],
     )
 
     return (
