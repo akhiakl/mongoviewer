@@ -3,11 +3,27 @@ import { useEffect, useState } from 'react';
 import type { CollectionIndexSummary, CollectionSchemaSummary, CollectionStats, Selection } from '@/components/mongo-viewer/types';
 import { mongoViewer } from '@/lib/renderer-api';
 
+const INSIGHTS_CACHE_TTL_MS = 60_000;
+
 type CollectionInsights = {
   indexes: CollectionIndexSummary[];
   schemaSummary: CollectionSchemaSummary | null;
   stats: CollectionStats | null;
 };
+
+type CachedInsights = CollectionInsights & {
+  cachedAt: number;
+};
+
+const insightsCache = new Map<string, CachedInsights>();
+
+function getInsightsCacheKey(activeConnectionId: string, selection: Selection) {
+  return `${activeConnectionId}:${selection.db}:${selection.collection}`;
+}
+
+export function resetCollectionInsightsCache() {
+  insightsCache.clear();
+}
 
 export function useCollectionInsights(activeConnectionId: string | null, selection: Selection | null) {
   const [insights, setInsights] = useState<CollectionInsights>({
@@ -27,6 +43,19 @@ export function useCollectionInsights(activeConnectionId: string | null, selecti
     }
 
     let cancelled = false;
+    const cacheKey = getInsightsCacheKey(activeConnectionId, selection);
+    const cachedInsights = insightsCache.get(cacheKey);
+
+    if (cachedInsights && Date.now() - cachedInsights.cachedAt < INSIGHTS_CACHE_TTL_MS) {
+      setInsights({
+        indexes: cachedInsights.indexes,
+        schemaSummary: cachedInsights.schemaSummary,
+        stats: cachedInsights.stats,
+      });
+      setLoadingInsights(false);
+      setInsightsError(null);
+      return;
+    }
 
     const run = async () => {
       setLoadingInsights(true);
@@ -40,6 +69,12 @@ export function useCollectionInsights(activeConnectionId: string | null, selecti
         ]);
 
         if (!cancelled) {
+          insightsCache.set(cacheKey, {
+            indexes,
+            schemaSummary,
+            stats,
+            cachedAt: Date.now(),
+          });
           setInsights({ indexes, schemaSummary, stats });
         }
       } catch (error) {

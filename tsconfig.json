@@ -17,5 +17,10 @@
         "./src/*"
       ]
     }
-  }
+  },
+  "exclude": [
+    "coverage",
+    "dist",
+    ".vite"
+  ]
 }

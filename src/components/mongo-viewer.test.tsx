@@ -185,7 +185,7 @@ describe('MongoViewerClient', () => {
       target: { value: 'alice' },
     });
 
-    await new Promise((resolve) => window.setTimeout(resolve, 200));
+    await new Promise((resolve) => window.setTimeout(resolve, 260));
 
     await waitFor(() => {
       expect(screen.getByText('Table Count:1')).toBeInTheDocument();
@@ -250,6 +250,39 @@ describe('MongoViewerClient', () => {
       expect(screen.getByText('Sidebar Selection:app/orders')).toBeInTheDocument();
       expect(screen.getByText('Query fields:_id,name,shipping,shipping.city')).toBeInTheDocument();
       expect(screen.getByText('Query sample keys:_id,name,shipping.city')).toBeInTheDocument();
+    });
+  });
+
+  it('shows inline recovery actions for invalid query and empty result states', async () => {
+    render(
+      <MongoViewerClient
+        activeConnectionId="conn-1"
+        activeConnectionName="Prod Cluster"
+        onBack={vi.fn()}
+      />,
+    );
+
+    fireEvent.change(screen.getByLabelText('Mongo query editor'), {
+      target: { value: '{"status":' },
+    });
+
+    expect(screen.getByText(/query issue:/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Apply Query' })).toBeDisabled();
+
+    fireEvent.change(screen.getByPlaceholderText('Filter records already loaded on this page'), {
+      target: { value: 'missing' },
+    });
+
+    await new Promise((resolve) => window.setTimeout(resolve, 260));
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Clear Quick Filter' })).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Clear Quick Filter' }));
+
+    await waitFor(() => {
+      expect(screen.getByText('Table Count:2')).toBeInTheDocument();
     });
   });
 
@@ -422,10 +455,11 @@ describe('MongoViewerClient', () => {
       target: { value: 'missing' },
     });
 
-    await new Promise((resolve) => window.setTimeout(resolve, 200));
+    await new Promise((resolve) => window.setTimeout(resolve, 260));
 
     await waitFor(() => {
       expect(screen.getByText('No records match the current quick filter.')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Clear Quick Filter' })).toBeInTheDocument();
     });
   });
 });

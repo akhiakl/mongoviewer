@@ -65,6 +65,7 @@ describe('ViewerHeader', () => {
         queryFieldNames={['_id', 'status', 'profile.city']}
         queryFieldSamples={{ status: ['active', 'disabled'], 'profile.city': ['Bengaluru'] }}
         queryDraft='{"status":"active"}'
+        queryValidationError={null}
         quickFilter="john"
         schemaSummary={{
           sampleSize: 2,
@@ -122,6 +123,7 @@ describe('ViewerHeader', () => {
         queryFieldNames={['_id', 'archived']}
         queryFieldSamples={{ archived: [true] }}
         queryDraft='{"status":"active"}'
+        queryValidationError={null}
         quickFilter=""
         schemaSummary={null}
         selection={{ db: 'app', collection: 'users' }}
@@ -182,6 +184,7 @@ describe('ViewerHeader', () => {
         queryFieldNames={['_id', 'status']}
         queryFieldSamples={{ status: ['active'] }}
         queryDraft=""
+        queryValidationError={null}
         quickFilter=""
         schemaSummary={{
           sampleSize: 2,
@@ -208,6 +211,40 @@ describe('ViewerHeader', () => {
     expect(screen.getByText('Schema Summary')).toBeInTheDocument();
   });
 
+  it('shows inline query validation feedback and disables apply for invalid syntax', () => {
+    render(
+      <ViewerHeader
+        activeConnectionName="Prod Cluster"
+        appliedMongoQuery=""
+        filteredRecordsCount={0}
+        indexes={[]}
+        loadingInsights={false}
+        loadingDocs={false}
+        onApplyQuery={vi.fn()}
+        onDeletePreset={vi.fn()}
+        onPresetNameChange={vi.fn()}
+        onPresetSelect={vi.fn()}
+        onQueryDraftChange={vi.fn()}
+        onQuickFilterChange={vi.fn()}
+        onResetQuery={vi.fn()}
+        onSavePreset={vi.fn()}
+        presetName=""
+        presets={[]}
+        queryFieldNames={['_id']}
+        queryFieldSamples={{}}
+        queryDraft='{"status":'
+        queryValidationError="Unexpected end of input"
+        quickFilter=""
+        schemaSummary={null}
+        selection={{ db: 'app', collection: 'users' }}
+        stats={null}
+      />,
+    );
+
+    expect(screen.getByText(/query issue: unexpected end of input/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Apply Query' })).toBeDisabled();
+  });
+
   it('disables preset actions when inputs are incomplete', () => {
     render(
       <ViewerHeader
@@ -230,6 +267,7 @@ describe('ViewerHeader', () => {
         queryFieldNames={[]}
         queryFieldSamples={{}}
         queryDraft=""
+        queryValidationError={null}
         quickFilter=""
         schemaSummary={null}
         selection={null}

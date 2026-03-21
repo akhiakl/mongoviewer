@@ -13,6 +13,8 @@ import { ViewerFooter } from "@/components/mongo-viewer/viewer-footer"
 import { ViewerNavigation } from "@/components/mongo-viewer/viewer-navigation"
 import type { DatabaseTreeItem, Selection, SortDirection, ViewMode } from "@/components/mongo-viewer/types"
 import { SidebarProvider } from "./ui/sidebar"
+import { validateMongoQuery } from "@/lib/query-validation"
+import { useDebouncedValue } from "@/hooks/use-debounced-value"
 
 type MongoViewerClientProps = {
     activeConnectionId: string | null
@@ -47,7 +49,6 @@ export function MongoViewerClient({ activeConnectionId, activeConnectionName, on
     const [pageSize, setPageSize] = useState(50)
     const [viewMode, setViewMode] = useState<ViewMode>("table")
     const [quickFilter, setQuickFilter] = useState("")
-    const [debouncedQuickFilter, setDebouncedQuickFilter] = useState("")
     const [queryDraft, setQueryDraft] = useState("")
     const [appliedMongoQuery, setAppliedMongoQuery] = useState("")
     const [presetName, setPresetName] = useState("")
@@ -68,13 +69,7 @@ export function MongoViewerClient({ activeConnectionId, activeConnectionName, on
     })
     const { indexes, insightsError, loadingInsights, schemaSummary, stats } = useCollectionInsights(activeConnectionId, selection)
 
-    React.useEffect(() => {
-        const timeoutId = window.setTimeout(() => {
-            setDebouncedQuickFilter(quickFilter)
-        }, 150)
-
-        return () => window.clearTimeout(timeoutId)
-    }, [quickFilter])
+    const debouncedQuickFilter = useDebouncedValue(quickFilter, 220)
 
     const filteredRecords = useMemo(() => {
         const normalizedFilter = debouncedQuickFilter.trim().toLowerCase()
@@ -94,7 +89,6 @@ export function MongoViewerClient({ activeConnectionId, activeConnectionName, on
 
     React.useEffect(() => {
         setQuickFilter("")
-        setDebouncedQuickFilter("")
         setQueryDraft("")
         setAppliedMongoQuery("")
         setPresetName("")
@@ -106,10 +100,26 @@ export function MongoViewerClient({ activeConnectionId, activeConnectionName, on
     const totalPages = Math.max(1, Math.ceil(total / pageSize))
     const error = docsError ?? treeError ?? insightsError
     const showEmptyConnectionState = !activeConnectionId
-    const noResultsMessage =
-        records.length === 0 ? "No records for this collection." : "No records match the current quick filter."
+    const queryValidationError = useMemo(() => validateMongoQuery(queryDraft), [queryDraft])
+    const hasQuickFilter = debouncedQuickFilter.trim().length > 0
+    const hasActiveMongoQuery = appliedMongoQuery.trim().length > 0
+    const noResultsMessage = useMemo(() => {
+        if (records.length === 0 && hasActiveMongoQuery) {
+            return "No records match the current Mongo query."
+        }
+
+        if (records.length === 0) {
+            return "No records for this collection."
+        }
+
+        return "No records match the current quick filter."
+    }, [hasActiveMongoQuery, records.length])
 
     const handleApplyQuery = () => {
+        if (queryValidationError) {
+            return
+        }
+
         setAppliedMongoQuery(queryDraft.trim())
         setPage(1)
     }
@@ -178,6 +188,7 @@ export function MongoViewerClient({ activeConnectionId, activeConnectionName, on
                         queryFieldNames={queryFieldNames}
                         queryFieldSamples={queryFieldSamples}
                         queryDraft={queryDraft}
+                        queryValidationError={queryValidationError}
                         quickFilter={quickFilter}
                         schemaSummary={schemaSummary}
                         selection={selection}
@@ -196,9 +207,13 @@ export function MongoViewerClient({ activeConnectionId, activeConnectionName, on
                         </div>
                     ) : (
                         <ViewerContent
+                            hasActiveMongoQuery={hasActiveMongoQuery}
+                            hasQuickFilter={hasQuickFilter}
                             filteredRecords={filteredRecords}
                             loadingDocs={loadingDocs}
                             noResultsMessage={noResultsMessage}
+                            onClearQuickFilter={() => setQuickFilter("")}
+                            onResetQuery={handleResetQuery}
                             onSortDirectionChange={(direction) => {
                                 setSortDirection(direction)
                                 setPage(1)

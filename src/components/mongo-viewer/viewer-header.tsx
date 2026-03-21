@@ -14,7 +14,6 @@ import type {
     CollectionStats,
     Selection,
 } from "@/components/mongo-viewer/types"
-
 type ViewerHeaderProps = {
     activeConnectionName: string | null
     appliedMongoQuery: string
@@ -36,6 +35,7 @@ type ViewerHeaderProps = {
     queryFieldSamples: Record<string, Array<string | number | boolean | null>>
     queryDraft: string
     quickFilter: string
+    queryValidationError: string | null
     schemaSummary: CollectionSchemaSummary | null
     selection: Selection | null
     stats: CollectionStats | null
@@ -62,6 +62,7 @@ export function ViewerHeader({
     queryFieldSamples,
     queryDraft,
     quickFilter,
+    queryValidationError,
     schemaSummary,
     selection,
     stats,
@@ -148,6 +149,15 @@ export function ViewerHeader({
                             <p className="mt-2 text-xs text-muted-foreground">
                                 Auto-closes quotes and braces, suggests field names while typing keys, and offers sampled values from the loaded records while typing plain values. Type <code className="rounded bg-muted px-1 py-0.5 text-[11px]">$</code> for Mongo operators. Use <kbd className="rounded border border-border px-1 py-0.5 text-[11px]">Ctrl</kbd> + <kbd className="rounded border border-border px-1 py-0.5 text-[11px]">Enter</kbd> to run.
                             </p>
+                            {queryValidationError ? (
+                                <p className="mt-2 text-xs text-destructive">
+                                    Query issue: {queryValidationError}
+                                </p>
+                            ) : queryDraft.trim() ? (
+                                <p className="mt-2 text-xs text-muted-foreground">
+                                    Query syntax looks valid and is ready to run.
+                                </p>
+                            ) : null}
                         </div>
                         <div className="grid gap-3 md:grid-cols-[minmax(0,14rem)_minmax(0,1fr)]">
                             <div>
@@ -181,7 +191,12 @@ export function ViewerHeader({
                             </div>
                         </div>
                         <div className="flex flex-wrap items-center gap-2">
-                            <Button size="sm" variant="outline" onClick={onApplyQuery} disabled={!selection || loadingDocs}>
+                            <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={onApplyQuery}
+                                disabled={!selection || loadingDocs || Boolean(queryValidationError)}
+                            >
                                 Apply Query
                             </Button>
                             <Button size="sm" variant="outline" onClick={onSavePreset} disabled={!presetName.trim() || !queryDraft.trim()}>

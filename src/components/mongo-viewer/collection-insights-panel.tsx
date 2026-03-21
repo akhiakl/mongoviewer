@@ -4,6 +4,7 @@ import type { CollectionIndexSummary, CollectionSchemaSummary, CollectionStats }
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Skeleton } from "@/components/ui/skeleton"
 
 type CollectionInsightsPanelProps = {
     indexes: CollectionIndexSummary[]
@@ -48,26 +49,34 @@ export function CollectionInsightsPanel({
                     <CardDescription>Quick storage and index signals for this collection.</CardDescription>
                 </CardHeader>
                 <CardContent className="grid gap-2 text-sm">
-                    <InsightRow
-                        label="Documents"
-                        value={stats ? stats.documentCount.toLocaleString() : loadingInsights ? "Loading..." : "Unavailable"}
-                    />
-                    <InsightRow
-                        label="Average size"
-                        value={stats ? formatBytes(stats.avgDocumentSize) : loadingInsights ? "Loading..." : "Unavailable"}
-                    />
-                    <InsightRow
-                        label="Storage size"
-                        value={stats ? formatBytes(stats.storageSize) : loadingInsights ? "Loading..." : "Unavailable"}
-                    />
-                    <InsightRow
-                        label="Index storage"
-                        value={stats ? formatBytes(stats.totalIndexSize) : loadingInsights ? "Loading..." : "Unavailable"}
-                    />
-                    <InsightRow
-                        label="Indexes"
-                        value={stats ? String(stats.totalIndexes) : loadingInsights ? "Loading..." : "Unavailable"}
-                    />
+                    {loadingInsights ? (
+                        Array.from({ length: 5 }, (_, index) => (
+                            <InsightRowSkeleton key={index} />
+                        ))
+                    ) : (
+                        <>
+                            <InsightRow
+                                label="Documents"
+                                value={stats ? stats.documentCount.toLocaleString() : "Unavailable"}
+                            />
+                            <InsightRow
+                                label="Average size"
+                                value={stats ? formatBytes(stats.avgDocumentSize) : "Unavailable"}
+                            />
+                            <InsightRow
+                                label="Storage size"
+                                value={stats ? formatBytes(stats.storageSize) : "Unavailable"}
+                            />
+                            <InsightRow
+                                label="Index storage"
+                                value={stats ? formatBytes(stats.totalIndexSize) : "Unavailable"}
+                            />
+                            <InsightRow
+                                label="Indexes"
+                                value={stats ? String(stats.totalIndexes) : "Unavailable"}
+                            />
+                        </>
+                    )}
                 </CardContent>
             </Card>
 
@@ -79,10 +88,12 @@ export function CollectionInsightsPanel({
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="max-h-72 space-y-2 overflow-auto pr-1">
-                    {topFields.length === 0 ? (
-                        <p className="text-sm text-muted-foreground">
-                            {loadingInsights ? "Loading schema..." : "No schema sample available."}
-                        </p>
+                    {loadingInsights ? (
+                        Array.from({ length: 3 }, (_, index) => (
+                            <InsightCardSkeleton key={index} />
+                        ))
+                    ) : topFields.length === 0 ? (
+                        <p className="text-sm text-muted-foreground">No schema sample available.</p>
                     ) : (
                         topFields.map((field) => (
                             <div key={field.path} className="rounded-md border border-border/60 p-2">
@@ -106,10 +117,12 @@ export function CollectionInsightsPanel({
                     <CardDescription>Field order, uniqueness, sparse rules, and TTL at a glance.</CardDescription>
                 </CardHeader>
                 <CardContent className="max-h-72 space-y-2 overflow-auto pr-1">
-                    {indexes.length === 0 ? (
-                        <p className="text-sm text-muted-foreground">
-                            {loadingInsights ? "Loading indexes..." : "No indexes reported."}
-                        </p>
+                    {loadingInsights ? (
+                        Array.from({ length: 3 }, (_, index) => (
+                            <InsightCardSkeleton key={index} compact />
+                        ))
+                    ) : indexes.length === 0 ? (
+                        <p className="text-sm text-muted-foreground">No indexes reported.</p>
                     ) : (
                         indexes.map((index) => (
                             <div key={index.name} className="rounded-md border border-border/60 p-2">
@@ -151,6 +164,28 @@ function InsightRow({ label, value }: { label: string; value: string }) {
         <div className="flex items-center justify-between gap-3 rounded-md border border-border/60 px-3 py-2">
             <span className="text-muted-foreground">{label}</span>
             <span className="font-medium text-foreground">{value}</span>
+        </div>
+    )
+}
+
+function InsightRowSkeleton() {
+    return (
+        <div data-testid="insight-row-skeleton" className="rounded-md border border-border/60 px-3 py-2">
+            <div className="flex items-center justify-between gap-3">
+                <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-4 w-16" />
+            </div>
+        </div>
+    )
+}
+
+function InsightCardSkeleton({ compact = false }: { compact?: boolean }) {
+    return (
+        <div data-testid="insight-card-skeleton" className="rounded-md border border-border/60 p-2">
+            <Skeleton className="h-4 w-28" />
+            <Skeleton className="mt-2 h-3 w-40" />
+            <Skeleton className="mt-2 h-3 w-full" />
+            {!compact ? <Skeleton className="mt-2 h-3 w-3/4" /> : null}
         </div>
     )
 }
