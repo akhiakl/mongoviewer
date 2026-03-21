@@ -74,6 +74,7 @@ describe('ConnectionCreateForm', () => {
         expect(onTlsCertificatePathChange).toHaveBeenCalledWith('');
     });
 
+
     it('renders error message when provided', () => {
         render(
             <ConnectionCreateForm
@@ -89,8 +90,99 @@ describe('ConnectionCreateForm', () => {
                 onSubmit={vi.fn(async () => undefined)}
             />,
         );
-
         expect(screen.getByText('Unable to save')).toBeInTheDocument();
+    });
+
+    it('shows tooltips for all help icons', async () => {
+        render(
+            <ConnectionCreateForm
+                name=""
+                connectionString=""
+                tlsCertificatePath=""
+                saving={false}
+                error={null}
+                onNameChange={vi.fn()}
+                onConnectionStringChange={vi.fn()}
+                onTlsCertificatePathChange={vi.fn()}
+                onPickTlsCertificate={vi.fn(async () => undefined)}
+                onSubmit={vi.fn(async () => undefined)}
+            />,
+        );
+        // There are three help icons (ⓘ)
+        const helpIcons = screen.getAllByText('ⓘ');
+        expect(helpIcons.length).toBeGreaterThanOrEqual(3);
+    });
+
+
+    it('shows connection string validation errors after change', () => {
+        const onConnectionStringChange = vi.fn();
+        render(
+            <ConnectionCreateForm
+                name=""
+                connectionString=""
+                tlsCertificatePath=""
+                saving={false}
+                error={null}
+                onNameChange={vi.fn()}
+                onConnectionStringChange={onConnectionStringChange}
+                onTlsCertificatePathChange={vi.fn()}
+                onPickTlsCertificate={vi.fn(async () => undefined)}
+                onSubmit={vi.fn(async () => undefined)}
+            />,
+        );
+        const textarea = screen.getByLabelText('Connection string');
+        fireEvent.change(textarea, { target: { value: 'not-a-mongo-uri' } });
+        expect(screen.getByText(/Must start with mongodb/)).toBeInTheDocument();
+    });
+
+
+    it('disables submit button if connection string is invalid after change', () => {
+        render(
+            <ConnectionCreateForm
+                name=""
+                connectionString=""
+                tlsCertificatePath=""
+                saving={false}
+                error={null}
+                onNameChange={vi.fn()}
+                onConnectionStringChange={vi.fn()}
+                onTlsCertificatePathChange={vi.fn()}
+                onPickTlsCertificate={vi.fn(async () => undefined)}
+                onSubmit={vi.fn(async () => undefined)}
+            />,
+        );
+        const textarea = screen.getByLabelText('Connection string');
+        fireEvent.change(textarea, { target: { value: 'not-a-mongo-uri' } });
+        const submitButton = screen.getByRole('button', { name: 'Save Connection' });
+        expect(submitButton).toBeDisabled();
+    });
+
+    it('shows and toggles password visibility in connection string', () => {
+        const password = 'secret123';
+        const uri = `mongodb://user:${password}@localhost:27017`;
+        const onConnectionStringChange = vi.fn();
+        render(
+            <ConnectionCreateForm
+                name=""
+                connectionString={uri}
+                tlsCertificatePath=""
+                saving={false}
+                error={null}
+                onNameChange={vi.fn()}
+                onConnectionStringChange={onConnectionStringChange}
+                onTlsCertificatePathChange={vi.fn()}
+                onPickTlsCertificate={vi.fn(async () => undefined)}
+                onSubmit={vi.fn(async () => undefined)}
+            />,
+        );
+        // Should show the toggle button
+        const toggleBtn = screen.getByRole('button', { name: /Show Password/i });
+        expect(toggleBtn).toBeInTheDocument();
+        // Should mask password by default
+        expect(screen.getByDisplayValue(/\*+/)).toBeInTheDocument();
+        // Toggle to show password
+        fireEvent.click(toggleBtn);
+        expect(screen.getByDisplayValue(uri)).toBeInTheDocument();
     });
 
     it('forwards input and textarea changes', () => {
