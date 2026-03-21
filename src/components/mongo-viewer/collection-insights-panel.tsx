@@ -38,21 +38,36 @@ export function CollectionInsightsPanel({
     schemaSummary,
     stats,
 }: CollectionInsightsPanelProps) {
-    const topFields = schemaSummary?.fields.slice(0, 8) ?? []
+    const topFields = schemaSummary?.fields.slice(0, 6) ?? []
 
     return (
-        <div className="mb-4 grid gap-3 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)_minmax(0,1.2fr)]">
+        <div className="mb-4 grid shrink-0 gap-3 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)_minmax(0,1.2fr)]">
             <Card size="sm">
                 <CardHeader>
                     <CardTitle>Collection Stats</CardTitle>
                     <CardDescription>Quick storage and index signals for this collection.</CardDescription>
                 </CardHeader>
                 <CardContent className="grid gap-2 text-sm">
-                    <InsightRow label="Documents" value={stats ? stats.documentCount.toLocaleString() : loadingInsights ? "Loading..." : "Unavailable"} />
-                    <InsightRow label="Average size" value={stats ? formatBytes(stats.avgDocumentSize) : loadingInsights ? "Loading..." : "Unavailable"} />
-                    <InsightRow label="Storage size" value={stats ? formatBytes(stats.storageSize) : loadingInsights ? "Loading..." : "Unavailable"} />
-                    <InsightRow label="Index storage" value={stats ? formatBytes(stats.totalIndexSize) : loadingInsights ? "Loading..." : "Unavailable"} />
-                    <InsightRow label="Indexes" value={stats ? String(stats.totalIndexes) : loadingInsights ? "Loading..." : "Unavailable"} />
+                    <InsightRow
+                        label="Documents"
+                        value={stats ? stats.documentCount.toLocaleString() : loadingInsights ? "Loading..." : "Unavailable"}
+                    />
+                    <InsightRow
+                        label="Average size"
+                        value={stats ? formatBytes(stats.avgDocumentSize) : loadingInsights ? "Loading..." : "Unavailable"}
+                    />
+                    <InsightRow
+                        label="Storage size"
+                        value={stats ? formatBytes(stats.storageSize) : loadingInsights ? "Loading..." : "Unavailable"}
+                    />
+                    <InsightRow
+                        label="Index storage"
+                        value={stats ? formatBytes(stats.totalIndexSize) : loadingInsights ? "Loading..." : "Unavailable"}
+                    />
+                    <InsightRow
+                        label="Indexes"
+                        value={stats ? String(stats.totalIndexes) : loadingInsights ? "Loading..." : "Unavailable"}
+                    />
                 </CardContent>
             </Card>
 
@@ -63,9 +78,11 @@ export function CollectionInsightsPanel({
                         Based on a sample of {schemaSummary?.sampleSize ?? 0} documents from the selected collection.
                     </CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-2">
+                <CardContent className="max-h-72 space-y-2 overflow-auto pr-1">
                     {topFields.length === 0 ? (
-                        <p className="text-sm text-muted-foreground">{loadingInsights ? "Loading schema..." : "No schema sample available."}</p>
+                        <p className="text-sm text-muted-foreground">
+                            {loadingInsights ? "Loading schema..." : "No schema sample available."}
+                        </p>
                     ) : (
                         topFields.map((field) => (
                             <div key={field.path} className="rounded-md border border-border/60 p-2">
@@ -74,7 +91,9 @@ export function CollectionInsightsPanel({
                                     <Badge variant="outline">{Math.round(field.presenceRate * 100)}% seen</Badge>
                                 </div>
                                 <p className="mt-1 text-xs text-muted-foreground">Types: {field.types.join(", ")}</p>
-                                <p className="mt-1 text-xs text-muted-foreground">Examples: {field.exampleValues.join(" • ")}</p>
+                                <p className="mt-1 text-xs text-muted-foreground">
+                                    Examples: {field.exampleValues.join(" | ")}
+                                </p>
                             </div>
                         ))
                     )}
@@ -86,9 +105,11 @@ export function CollectionInsightsPanel({
                     <CardTitle>Indexes</CardTitle>
                     <CardDescription>Field order, uniqueness, sparse rules, and TTL at a glance.</CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-2">
+                <CardContent className="max-h-72 space-y-2 overflow-auto pr-1">
                     {indexes.length === 0 ? (
-                        <p className="text-sm text-muted-foreground">{loadingInsights ? "Loading indexes..." : "No indexes reported."}</p>
+                        <p className="text-sm text-muted-foreground">
+                            {loadingInsights ? "Loading indexes..." : "No indexes reported."}
+                        </p>
                     ) : (
                         indexes.map((index) => (
                             <div key={index.name} className="rounded-md border border-border/60 p-2">

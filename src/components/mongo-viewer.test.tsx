@@ -170,6 +170,12 @@ describe('MongoViewerClient', () => {
       expect(screen.getByText('Sidebar Selection:app/users')).toBeInTheDocument();
       expect(screen.getByText('Query fields:_id,name,profile,profile.city,status')).toBeInTheDocument();
       expect(screen.getByText('Query sample keys:_id,name,profile.city,status')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /collection insights/i })).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: /collection insights/i }));
+
+    await waitFor(() => {
       expect(screen.getByText('Collection Stats')).toBeInTheDocument();
       expect(screen.getByText('Schema Summary')).toBeInTheDocument();
       expect(screen.getAllByText('Indexes').length).toBeGreaterThan(0);

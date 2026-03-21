@@ -40,6 +40,17 @@ describe('ViewerHeader', () => {
         activeConnectionName="Prod Cluster"
         appliedMongoQuery='{"status":"active"}'
         filteredRecordsCount={12}
+        indexes={[
+          {
+            name: "_id_",
+            fields: ["_id (1)"],
+            unique: true,
+            sparse: false,
+            partial: false,
+            ttlSeconds: null,
+          },
+        ]}
+        loadingInsights={false}
         loadingDocs={false}
         onApplyQuery={vi.fn()}
         onDeletePreset={vi.fn()}
@@ -55,7 +66,20 @@ describe('ViewerHeader', () => {
         queryFieldSamples={{ status: ['active', 'disabled'], 'profile.city': ['Bengaluru'] }}
         queryDraft='{"status":"active"}'
         quickFilter="john"
+        schemaSummary={{
+          sampleSize: 2,
+          fields: [
+            { path: "status", types: ["string"], presenceRate: 1, exampleValues: ["active"] },
+          ],
+        }}
         selection={{ db: 'app', collection: 'users' }}
+        stats={{
+          documentCount: 2,
+          avgDocumentSize: 128,
+          storageSize: 2048,
+          totalIndexSize: 512,
+          totalIndexes: 1,
+        }}
       />,
     );
 
@@ -82,6 +106,8 @@ describe('ViewerHeader', () => {
         activeConnectionName={null}
         appliedMongoQuery=""
         filteredRecordsCount={0}
+        indexes={[]}
+        loadingInsights={false}
         loadingDocs={false}
         onApplyQuery={onApplyQuery}
         onDeletePreset={onDeletePreset}
@@ -97,7 +123,9 @@ describe('ViewerHeader', () => {
         queryFieldSamples={{ archived: [true] }}
         queryDraft='{"status":"active"}'
         quickFilter=""
+        schemaSummary={null}
         selection={{ db: 'app', collection: 'users' }}
+        stats={null}
       />,
     );
 
@@ -123,12 +151,71 @@ describe('ViewerHeader', () => {
     expect(onResetQuery).toHaveBeenCalledTimes(1);
   });
 
+  it('shows insights only when the header toggle is opened', () => {
+    render(
+      <ViewerHeader
+        activeConnectionName="Prod Cluster"
+        appliedMongoQuery=""
+        filteredRecordsCount={2}
+        indexes={[
+          {
+            name: "_id_",
+            fields: ["_id (1)"],
+            unique: true,
+            sparse: false,
+            partial: false,
+            ttlSeconds: null,
+          },
+        ]}
+        loadingInsights={false}
+        loadingDocs={false}
+        onApplyQuery={vi.fn()}
+        onDeletePreset={vi.fn()}
+        onPresetNameChange={vi.fn()}
+        onPresetSelect={vi.fn()}
+        onQueryDraftChange={vi.fn()}
+        onQuickFilterChange={vi.fn()}
+        onResetQuery={vi.fn()}
+        onSavePreset={vi.fn()}
+        presetName=""
+        presets={[]}
+        queryFieldNames={['_id', 'status']}
+        queryFieldSamples={{ status: ['active'] }}
+        queryDraft=""
+        quickFilter=""
+        schemaSummary={{
+          sampleSize: 2,
+          fields: [
+            { path: "status", types: ["string"], presenceRate: 1, exampleValues: ["active"] },
+          ],
+        }}
+        selection={{ db: 'app', collection: 'users' }}
+        stats={{
+          documentCount: 2,
+          avgDocumentSize: 128,
+          storageSize: 2048,
+          totalIndexSize: 512,
+          totalIndexes: 1,
+        }}
+      />,
+    );
+
+    expect(screen.queryByText('Collection Stats')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /collection insights/i }));
+
+    expect(screen.getByText('Collection Stats')).toBeInTheDocument();
+    expect(screen.getByText('Schema Summary')).toBeInTheDocument();
+  });
+
   it('disables preset actions when inputs are incomplete', () => {
     render(
       <ViewerHeader
         activeConnectionName={null}
         appliedMongoQuery=""
         filteredRecordsCount={0}
+        indexes={[]}
+        loadingInsights={false}
         loadingDocs={true}
         onApplyQuery={vi.fn()}
         onDeletePreset={vi.fn()}
@@ -144,7 +231,9 @@ describe('ViewerHeader', () => {
         queryFieldSamples={{}}
         queryDraft=""
         quickFilter=""
+        schemaSummary={null}
         selection={null}
+        stats={null}
       />,
     );
 

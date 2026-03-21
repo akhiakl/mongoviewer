@@ -12,7 +12,7 @@ import { ViewerContent } from "@/components/mongo-viewer/viewer-content"
 import { ViewerFooter } from "@/components/mongo-viewer/viewer-footer"
 import { ViewerNavigation } from "@/components/mongo-viewer/viewer-navigation"
 import type { DatabaseTreeItem, Selection, SortDirection, ViewMode } from "@/components/mongo-viewer/types"
-import { SidebarInset, SidebarProvider } from "./ui/sidebar"
+import { SidebarProvider } from "./ui/sidebar"
 
 type MongoViewerClientProps = {
     activeConnectionId: string | null
@@ -157,11 +157,13 @@ export function MongoViewerClient({ activeConnectionId, activeConnectionName, on
                         setPage(1)
                     }}
                 />
-                <SidebarInset className="min-h-0 overflow-hidden">
+                <div className="min-h-0 flex-1 overflow-y-auto">
                     <ViewerHeader
                         activeConnectionName={activeConnectionName}
                         appliedMongoQuery={appliedMongoQuery}
                         filteredRecordsCount={filteredRecords.length}
+                        indexes={indexes}
+                        loadingInsights={loadingInsights}
                         loadingDocs={loadingDocs}
                         onApplyQuery={handleApplyQuery}
                         onDeletePreset={handleDeletePreset}
@@ -177,7 +179,9 @@ export function MongoViewerClient({ activeConnectionId, activeConnectionName, on
                         queryFieldSamples={queryFieldSamples}
                         queryDraft={queryDraft}
                         quickFilter={quickFilter}
+                        schemaSummary={schemaSummary}
                         selection={selection}
+                        stats={stats}
                     />
 
                     {error ? (
@@ -187,50 +191,46 @@ export function MongoViewerClient({ activeConnectionId, activeConnectionName, on
                     ) : null}
 
                     {showEmptyConnectionState ? (
-                        <div className="flex flex-1 items-center justify-center px-4 py-4 text-sm text-muted-foreground md:px-6">
+                        <div className="flex min-h-80 items-center justify-center px-4 py-4 text-sm text-muted-foreground md:px-6">
                             Save or activate a connection to start browsing.
                         </div>
                     ) : (
-                        <>
-                            <ViewerContent
-                                filteredRecords={filteredRecords}
-                                indexes={indexes}
-                                loadingInsights={loadingInsights}
-                                loadingDocs={loadingDocs}
-                                noResultsMessage={noResultsMessage}
-                                onSortDirectionChange={(direction) => {
-                                    setSortDirection(direction)
-                                    setPage(1)
-                                }}
-                                onSortFieldChange={(field) => {
-                                    setSortField(field)
-                                    setPage(1)
-                                }}
-                                onViewModeChange={setViewMode}
-                                queryFieldNames={queryFieldNames}
-                                schemaSummary={schemaSummary}
-                                selection={selection}
-                                sortDirection={sortDirection}
-                                sortField={sortField}
-                                stats={stats}
-                                viewMode={viewMode}
-                            />
-                            <ViewerFooter
-                                loadingDocs={loadingDocs}
-                                onPageChange={setPage}
-                                onPageSizeChange={(nextPageSize) => {
-                                    setPageSize(nextPageSize)
-                                    setPage(1)
-                                }}
-                                page={page}
-                                pageSize={pageSize}
-                                selection={selection}
-                                total={total}
-                                totalPages={totalPages}
-                            />
-                        </>
+                        <ViewerContent
+                            filteredRecords={filteredRecords}
+                            loadingDocs={loadingDocs}
+                            noResultsMessage={noResultsMessage}
+                            onSortDirectionChange={(direction) => {
+                                setSortDirection(direction)
+                                setPage(1)
+                            }}
+                            onSortFieldChange={(field) => {
+                                setSortField(field)
+                                setPage(1)
+                            }}
+                            onViewModeChange={setViewMode}
+                            queryFieldNames={queryFieldNames}
+                            selection={selection}
+                            sortDirection={sortDirection}
+                            sortField={sortField}
+                            viewMode={viewMode}
+                        />
                     )}
-                </SidebarInset>
+                    {!showEmptyConnectionState ? (
+                        <ViewerFooter
+                            loadingDocs={loadingDocs}
+                            onPageChange={setPage}
+                            onPageSizeChange={(nextPageSize) => {
+                                setPageSize(nextPageSize)
+                                setPage(1)
+                            }}
+                            page={page}
+                            pageSize={pageSize}
+                            selection={selection}
+                            total={total}
+                            totalPages={totalPages}
+                        />
+                    ) : null}
+                </div>
             </SidebarProvider>
         </section>
     )

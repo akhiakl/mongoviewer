@@ -1,16 +1,26 @@
-import { Search } from "lucide-react"
+import { useState } from "react"
+import { ChartColumnIncreasing, ChevronDown, Search } from "lucide-react"
 
+import { CollectionInsightsPanel } from "@/components/mongo-viewer/collection-insights-panel"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { Collapsible, CollapsibleContent } from "@/components/ui/collapsible"
 import { Input } from "@/components/ui/input"
 import { QueryEditor } from "@/components/mongo-viewer/query-editor"
 import type { QueryPreset } from "@/components/mongo-viewer/query-presets"
-import type { Selection } from "@/components/mongo-viewer/types"
+import type {
+    CollectionIndexSummary,
+    CollectionSchemaSummary,
+    CollectionStats,
+    Selection,
+} from "@/components/mongo-viewer/types"
 
 type ViewerHeaderProps = {
     activeConnectionName: string | null
     appliedMongoQuery: string
     filteredRecordsCount: number
+    indexes: CollectionIndexSummary[]
+    loadingInsights: boolean
     loadingDocs: boolean
     onApplyQuery: () => void
     onDeletePreset: () => void
@@ -26,13 +36,17 @@ type ViewerHeaderProps = {
     queryFieldSamples: Record<string, Array<string | number | boolean | null>>
     queryDraft: string
     quickFilter: string
+    schemaSummary: CollectionSchemaSummary | null
     selection: Selection | null
+    stats: CollectionStats | null
 }
 
 export function ViewerHeader({
     activeConnectionName,
     appliedMongoQuery,
     filteredRecordsCount,
+    indexes,
+    loadingInsights,
     loadingDocs,
     onApplyQuery,
     onDeletePreset,
@@ -48,8 +62,12 @@ export function ViewerHeader({
     queryFieldSamples,
     queryDraft,
     quickFilter,
+    schemaSummary,
     selection,
+    stats,
 }: ViewerHeaderProps) {
+    const [showInsights, setShowInsights] = useState(false)
+
     return (
         <div className="border-b border-border px-4 py-4 md:px-6">
             <div className="min-w-0">
@@ -63,8 +81,36 @@ export function ViewerHeader({
                     </span>
                     {quickFilter ? <Badge variant="outline">{filteredRecordsCount.toLocaleString()} shown</Badge> : null}
                     {appliedMongoQuery ? <Badge variant="outline">query active</Badge> : null}
+                    {selection ? (
+                        <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 px-2 text-xs"
+                            aria-expanded={showInsights}
+                            onClick={() => setShowInsights((current) => !current)}
+                        >
+                            <ChartColumnIncreasing className="size-3.5" />
+                            {showInsights ? "Hide Insights" : "Collection Insights"}
+                            <ChevronDown className={`size-3.5 transition-transform ${showInsights ? "rotate-180" : ""}`} />
+                        </Button>
+                    ) : null}
                 </div>
             </div>
+
+
+            {selection ? (
+                <Collapsible open={showInsights} onOpenChange={setShowInsights}>
+                    <CollapsibleContent className="pt-4">
+                        <CollectionInsightsPanel
+                            indexes={indexes}
+                            loadingInsights={loadingInsights}
+                            schemaSummary={schemaSummary}
+                            stats={stats}
+                        />
+                    </CollapsibleContent>
+                </Collapsible>
+            ) : null}
 
             <div className="mt-4 grid gap-3 lg:grid-cols-[minmax(0,20rem)_minmax(0,1fr)]">
                 <div className="rounded-lg border border-border/60 bg-muted/20 p-3">
