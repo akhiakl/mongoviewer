@@ -8,6 +8,21 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import React, { useState } from 'react';
+import { Toggle } from '@/components/ui/toggle';
+
+// List of common MongoDB query parameters
+const COMMON_QUERY_PARAMS = [
+    { key: 'authSource', label: 'authSource', placeholder: 'admin', type: 'text' },
+    { key: 'replicaSet', label: 'replicaSet', placeholder: 'rs0', type: 'text' },
+    { key: 'tls', label: 'tls', type: 'toggle' },
+    { key: 'readPreference', label: 'readPreference', placeholder: 'primary/secondary', type: 'text' },
+    { key: 'w', label: 'w', placeholder: '1/majority', type: 'text' },
+    { key: 'retryWrites', label: 'retryWrites', placeholder: 'true/false', type: 'text' },
+    { key: 'connectTimeoutMS', label: 'connectTimeoutMS', placeholder: '10000', type: 'number' },
+    { key: 'socketTimeoutMS', label: 'socketTimeoutMS', placeholder: '10000', type: 'number' },
+    { key: 'maxPoolSize', label: 'maxPoolSize', placeholder: '10', type: 'number' },
+    { key: 'appName', label: 'appName', placeholder: 'MyApp', type: 'text' },
+];
 
 type ConnectionCreateFormProps = {
     name: string;
@@ -38,18 +53,68 @@ export function ConnectionCreateForm({
     const [showPassword, setShowPassword] = useState(false);
     const [connectionStringError, setConnectionStringError] = useState<string | null>(null);
     const [displayedConnectionString, setDisplayedConnectionString] = useState(connectionString);
+    const [showParams, setShowParams] = useState(false);
+    const [paramValues, setParamValues] = useState<Record<string, string>>({});
 
     // Sync displayed value with prop changes (e.g., after save/reset)
+    // Bidirectional sync: when connectionString changes, update paramValues; when paramValues change, update connectionString
     React.useEffect(() => {
         setDisplayedConnectionString(connectionString);
+        // Parse params from connection string
+        try {
+            const url = new URL(connectionString);
+            const params: Record<string, string> = {};
+            COMMON_QUERY_PARAMS.forEach(({ key }) => {
+                const val = url.searchParams.get(key);
+                if (val !== null) params[key] = val;
+            });
+            setParamValues(params);
+        } catch {
+            setParamValues({});
+        }
     }, [connectionString]);
+
+    // When paramValues change (from UI), update connection string
+    React.useEffect(() => {
+        // Only update if paramValues changed from UI, not from connectionString prop
+        // Avoid infinite loop by checking if paramValues match connectionString
+        try {
+            const url = new URL(displayedConnectionString || 'mongodb://localhost');
+            let changed = false;
+            COMMON_QUERY_PARAMS.forEach(({ key }) => {
+                const val = url.searchParams.get(key);
+                if ((val ?? '') !== (paramValues[key] ?? '')) changed = true;
+            });
+            if (changed) {
+                // Remove all common params first
+                COMMON_QUERY_PARAMS.forEach(({ key }) => url.searchParams.delete(key));
+                // Add back non-empty params
+                Object.entries(paramValues).forEach(([k, v]) => {
+                    if (v && v.trim() !== '') url.searchParams.set(k, v);
+                });
+                const updated = url.toString();
+                setDisplayedConnectionString(updated);
+                onConnectionStringChange(updated);
+            }
+        } catch {
+            // fallback: do nothing
+        }
+        // (removed unnecessary eslint-disable)
+    }, [paramValues]);
+    // TLS enabled state is derived from paramValues
+    const tlsEnabled = paramValues['tls'] === 'true';
+    // Helper to update the connection string with new params
+    function handleParamChange(key: string, value: string) {
+        const newParams = { ...paramValues, [key]: value };
+        setParamValues(newParams);
+        // updateConnectionStringParams is now handled by useEffect
+    }
 
     // Basic MongoDB connection string validation
     function validateConnectionString(str: string): string | null {
         if (!str.trim()) return 'Connection string is required.';
         if (!/^mongodb(\+srv)?:\/\//.test(str.trim())) return 'Must start with mongodb:// or mongodb+srv://';
         try {
-            // eslint-disable-next-line no-new
             new URL(str.trim());
         } catch {
             return 'Invalid connection string format.';
@@ -61,6 +126,18 @@ export function ConnectionCreateForm({
         setDisplayedConnectionString(value);
         onConnectionStringChange(value);
         setConnectionStringError(validateConnectionString(value));
+        // Parse params from new string and update paramValues
+        try {
+            const url = new URL(value);
+            const params: Record<string, string> = {};
+            COMMON_QUERY_PARAMS.forEach(({ key }) => {
+                const val = url.searchParams.get(key);
+                if (val !== null) params[key] = val;
+            });
+            setParamValues(params);
+        } catch {
+            setParamValues({});
+        }
     }
 
     // Extract password from connection string for toggle
@@ -89,11 +166,26 @@ export function ConnectionCreateForm({
         }
     }
 
+    // Mask TLS certificate path in connection string for display
+    function maskTlsCertPathInConnectionString(str: string): string {
+        try {
+            const url = new URL(str);
+            // If tlsCertificatePath is present in string, replace with <path to filename.pem>
+            if (tlsCertificatePath && url.toString().includes(tlsCertificatePath)) {
+                const fileName = tlsCertificatePath.split(/[/\\]/).pop();
+                return url.toString().replace(tlsCertificatePath, `<path to ${fileName}>`);
+            }
+            return url.toString();
+        } catch {
+            return str;
+        }
+    }
+
     const passwordInString = extractPassword(displayedConnectionString);
 
     return (
         <TooltipProvider>
-            <Card className="flex h-full min-h-0 w-full flex-col">
+            <Card className="flex h-full min-h-0 w-full flex-col overflow-y-auto">
                 <CardHeader className="pb-4">
                     <CardTitle>Create New Connection</CardTitle>
                     <CardDescription>
@@ -107,7 +199,7 @@ export function ConnectionCreateForm({
                         }}
                         className="flex h-full flex-col gap-4"
                     >
-                        <div className="space-y-1.5">
+                        <div>
                             <div className="flex items-center gap-1">
                                 <Label htmlFor="connection-name">Connection name</Label>
                                 <Tooltip>
@@ -155,7 +247,9 @@ export function ConnectionCreateForm({
                             <Textarea
                                 id="connection-string"
                                 required
-                                value={passwordInString && !showPassword ? maskPassword(displayedConnectionString) : displayedConnectionString}
+                                value={passwordInString && !showPassword
+                                    ? maskPassword(maskTlsCertPathInConnectionString(displayedConnectionString))
+                                    : maskTlsCertPathInConnectionString(displayedConnectionString)}
                                 onChange={(event) => handleConnectionStringChange(event.target.value)}
                                 className="min-h-24"
                                 placeholder="mongodb://user:password@host:27017/?replicaSet=rs0"
@@ -166,51 +260,107 @@ export function ConnectionCreateForm({
                             )}
                         </div>
 
-                        <div className="space-y-1.5">
-                            <div className="flex items-center justify-between gap-3">
-                                <div className="flex items-center gap-1">
-                                    <Label htmlFor="tls-certificate-path">TLS certificate file (optional)</Label>
-                                    <Tooltip>
-                                        <TooltipTrigger asChild>
-                                            <span className="cursor-pointer text-muted-foreground">ⓘ</span>
-                                        </TooltipTrigger>
-                                        <TooltipContent>
-                                            PEM file for secure connections. Only needed for self-signed or custom CAs.
-                                        </TooltipContent>
-                                    </Tooltip>
+                        {/* Query params section at the bottom */}
+                        <div className="space-y-1.5 mt-4">
+                            <Toggle
+                                pressed={showParams}
+                                onPressedChange={setShowParams}
+                                className="mb-2"
+                                aria-label="Show common query parameters"
+                            >
+                                {showParams ? 'Hide' : 'Show'} Common Query Parameters
+                            </Toggle>
+                            {showParams && (
+                                <div className="mb-2 rounded-md border border-border bg-muted p-3 flex flex-col gap-2">
+                                    {COMMON_QUERY_PARAMS.map(({ key, label, placeholder, type }) => (
+                                        <div key={key} className="flex items-center gap-2">
+                                            <Label htmlFor={`param-${key}`} className="w-36">{label}</Label>
+                                            {type === 'toggle' ? (
+                                                <input
+                                                    id={`param-${key}`}
+                                                    type="checkbox"
+                                                    checked={paramValues[key] === 'true'}
+                                                    onChange={e => handleParamChange(key, e.target.checked ? 'true' : '')}
+                                                    className="size-4 accent-primary"
+                                                />
+                                            ) : (
+                                                <Input
+                                                    id={`param-${key}`}
+                                                    type={type}
+                                                    value={paramValues[key] ?? ''}
+                                                    placeholder={placeholder}
+                                                    onChange={e => handleParamChange(key, e.target.value)}
+                                                    className="flex-1"
+                                                />
+                                            )}
+                                        </div>
+                                    ))}
+                                    <p className="text-xs text-muted-foreground mt-1">These will be added to the connection string as query parameters.</p>
                                 </div>
-                                <div className="flex items-center gap-2">
-                                    {tlsCertificatePath ? (
-                                        <Button
-                                            type="button"
-                                            size="sm"
-                                            variant="ghost"
-                                            onClick={() => onTlsCertificatePathChange('')}
-                                        >
-                                            Clear
-                                        </Button>
-                                    ) : null}
-                                    <Button
-                                        type="button"
-                                        size="sm"
-                                        variant="ghost"
-                                        onClick={() => {
-                                            void onPickTlsCertificate();
-                                        }}
-                                    >
-                                        Choose File
-                                    </Button>
+                            )}
+                            {/* TLS Certificate section, only if TLS is enabled */}
+                            {tlsEnabled && (
+                                <TlsCertificateSection
+                                    tlsCertificatePath={tlsCertificatePath}
+                                    onTlsCertificatePathChange={onTlsCertificatePathChange}
+                                    onPickTlsCertificate={onPickTlsCertificate}
+                                />
+                            )}
+                        // Extracted TLS certificate section to reduce file length
+                        function TlsCertificateSection({ tlsCertificatePath, onTlsCertificatePathChange, onPickTlsCertificate }: {
+                            tlsCertificatePath: string;
+                            onTlsCertificatePathChange: (v: string) => void;
+                            onPickTlsCertificate: () => Promise<void>;
+                        }) {
+                            return (
+                                <div className="space-y-1.5 mt-2">
+                                    <div className="flex items-center justify-between gap-3">
+                                        <div className="flex items-center gap-1">
+                                            <Label htmlFor="tls-certificate-path">TLS certificate file (optional)</Label>
+                                            <Tooltip>
+                                                <TooltipTrigger asChild>
+                                                    <span className="cursor-pointer text-muted-foreground">ⓘ</span>
+                                                </TooltipTrigger>
+                                                <TooltipContent>
+                                                    PEM file for secure connections. Only needed for self-signed or custom CAs.
+                                                </TooltipContent>
+                                            </Tooltip>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            {tlsCertificatePath ? (
+                                                <Button
+                                                    type="button"
+                                                    size="sm"
+                                                    variant="ghost"
+                                                    onClick={() => onTlsCertificatePathChange('')}
+                                                >
+                                                    Clear
+                                                </Button>
+                                            ) : null}
+                                            <Button
+                                                type="button"
+                                                size="sm"
+                                                variant="ghost"
+                                                onClick={() => {
+                                                    void onPickTlsCertificate();
+                                                }}
+                                            >
+                                                Choose File
+                                            </Button>
+                                        </div>
+                                    </div>
+                                    <Input
+                                        id="tls-certificate-path"
+                                        value={tlsCertificatePath}
+                                        readOnly
+                                        placeholder="No file selected"
+                                    />
+                                    <p className="text-xs text-muted-foreground">
+                                        The selected certificate is copied into app storage with a unique file name.
+                                    </p>
                                 </div>
-                            </div>
-                            <Input
-                                id="tls-certificate-path"
-                                value={tlsCertificatePath}
-                                readOnly
-                                placeholder="No file selected"
-                            />
-                            <p className="text-xs text-muted-foreground">
-                                The selected certificate is copied into app storage with a unique file name.
-                            </p>
+                            );
+                        }
                         </div>
 
                         {error ? (

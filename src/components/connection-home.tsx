@@ -27,10 +27,15 @@ export function ConnectionHome({
         setLocalError(null)
 
         try {
+            let certPathToSave = tlsCertificatePath || undefined;
+            // Only upload if certPath is set and not already in app storage
+            if (tlsCertificatePath && !/storage[\\/]+certificates/.test(tlsCertificatePath)) {
+                certPathToSave = await window.mongoViewer.persistTlsCertificate(tlsCertificatePath);
+            }
             await onSaveConnection({
                 name,
                 connectionString,
-                tlsCertificatePath: tlsCertificatePath || undefined,
+                tlsCertificatePath: certPathToSave,
             })
 
             setName("")

@@ -30,13 +30,14 @@ describe('ConnectionCreateForm', () => {
         expect(onSubmit).toHaveBeenCalledTimes(1);
     });
 
+
     it('calls file picker callback when Choose File is clicked', () => {
         const onPickTlsCertificate = vi.fn(async () => undefined);
 
         render(
             <ConnectionCreateForm
                 name=""
-                connectionString=""
+                connectionString="mongodb://localhost:27017/?tls=true"
                 tlsCertificatePath=""
                 saving={false}
                 error={null}
@@ -48,9 +49,13 @@ describe('ConnectionCreateForm', () => {
             />,
         );
 
+        // TLS section is visible because tls param is set
+        fireEvent.click(screen.getByRole('button', { name: /Show common query parameters/i }));
+        // The Choose File button should be present
         fireEvent.click(screen.getByRole('button', { name: 'Choose File' }));
         expect(onPickTlsCertificate).toHaveBeenCalledTimes(1);
     });
+
 
     it('shows clear button when cert path exists and clears it', () => {
         const onTlsCertificatePathChange = vi.fn();
@@ -58,7 +63,7 @@ describe('ConnectionCreateForm', () => {
         render(
             <ConnectionCreateForm
                 name=""
-                connectionString=""
+                connectionString="mongodb://localhost:27017/?tls=true"
                 tlsCertificatePath="C:/certs/ca.pem"
                 saving={false}
                 error={null}
@@ -70,6 +75,7 @@ describe('ConnectionCreateForm', () => {
             />,
         );
 
+        fireEvent.click(screen.getByRole('button', { name: /Show common query parameters/i }));
         fireEvent.click(screen.getByRole('button', { name: 'Clear' }));
         expect(onTlsCertificatePathChange).toHaveBeenCalledWith('');
     });
@@ -108,9 +114,9 @@ describe('ConnectionCreateForm', () => {
                 onSubmit={vi.fn(async () => undefined)}
             />,
         );
-        // There are three help icons (ⓘ)
+        // There are two help icons (ⓘ)
         const helpIcons = screen.getAllByText('ⓘ');
-        expect(helpIcons.length).toBeGreaterThanOrEqual(3);
+        expect(helpIcons.length).toBe(2);
     });
 
 

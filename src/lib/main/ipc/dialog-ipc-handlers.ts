@@ -1,3 +1,8 @@
+import { persistTlsCertificate } from '../tls-certificate-service';
+    ipcMain.handle('dialog:persist-tls-certificate', async (_event, sourcePath: string) => {
+        if (!sourcePath) return null;
+        return await persistTlsCertificate(sourcePath);
+    });
 import { dialog, ipcMain } from 'electron/main';
 
 export function registerDialogIpcHandlers() {
