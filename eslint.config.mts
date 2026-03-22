@@ -28,14 +28,14 @@ export default defineConfig([
     ...pluginReact.configs.flat["jsx-runtime"],
   },
   {
-    files: ["src/components/**/*.tsx"],
-    ignores: ["src/components/ui/**", "src/components/**/*.test.tsx"],
+    files: ["src/renderer/components/**/*.tsx"],
+    ignores: ["src/renderer/components/ui/**", "src/renderer/components/**/*.test.tsx"],
     rules: {
       "max-lines": ["error", { max: 300, skipBlankLines: true, skipComments: true }],
     },
   },
   {
-    files: ["src/components/**/*.test.tsx"],
+    files: ["src/renderer/components/**/*.test.tsx"],
     rules: {
       "max-lines": ["error", { max: 450, skipBlankLines: true, skipComments: true }],
     },
