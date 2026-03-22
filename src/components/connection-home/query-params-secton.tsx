@@ -27,7 +27,7 @@ const QueryParamsSection = ({ paramValues, setParamValues }: QueryParamsSectionP
     }
 
     return (
-        <div className="mb-2 rounded-md border border-border bg-muted p-3 flex flex-col gap-2">
+        <div className="mb-2 p-3 flex flex-col gap-2">
             {COMMON_QUERY_PARAMS.map(({ key, label, placeholder, type }) => (
                 <div key={key} className="flex items-center gap-2">
                     <Label htmlFor={`param-${key}`} className="w-36">{label}</Label>

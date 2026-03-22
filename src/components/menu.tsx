@@ -1,3 +1,4 @@
+import React, { useCallback } from "react";
 import {
     Menubar,
     MenubarCheckboxItem,
@@ -5,135 +6,129 @@ import {
     MenubarGroup,
     MenubarItem,
     MenubarMenu,
-    MenubarRadioGroup,
-    MenubarRadioItem,
     MenubarSeparator,
     MenubarShortcut,
-    MenubarSub,
-    MenubarSubContent,
-    MenubarSubTrigger,
     MenubarTrigger,
 } from "@/components/ui/menubar"
+import { useMenu } from "@/hooks/menu/use-menu";
 
-
-const Menu = () => {
+const Menu: React.FC = () => {
+    // Handler hooks
+    const {
+        openConnection,
+        saveCurrentConnection,
+        openSavedConnection,
+        renameConnection,
+        deleteConnection,
+        reload, toggleSidebar, showQueryHistory, showSchemaPanel,
+        undo, redo, cut, copy, paste, find,
+        help, reportIssue, about,
+        darkTheme, toggleDarkTheme,
+    } = useMenu();
+    // Local stubs for menu actions
+    const saveConnection = useCallback(() => {/* TODO: Save connection from menu */ }, []);
+    const closeTab = useCallback(() => {/* TODO: Close tab logic */ }, []);
+    const exportCollection = useCallback(() => {/* TODO: Export collection logic */ }, []);
+    const importCollection = useCallback(() => {/* TODO: Import collection logic */ }, []);
+    const preferences = useCallback(() => {/* TODO: Preferences logic */ }, []);
     return (
-        <Menubar className="w-72">
+        <Menubar className="w-80">
+            {/* File Menu */}
             <MenubarMenu>
                 <MenubarTrigger>File</MenubarTrigger>
                 <MenubarContent>
                     <MenubarGroup>
-                        <MenubarItem>
-                            New Tab <MenubarShortcut>⌘T</MenubarShortcut>
+                        <MenubarItem onClick={openConnection}>Open Connection
+                            <MenubarShortcut>Ctrl+O</MenubarShortcut>
+
                         </MenubarItem>
-                        <MenubarItem>
-                            New Window <MenubarShortcut>⌘N</MenubarShortcut>
+                        <MenubarItem onClick={saveConnection}>Save Connection
+                            <MenubarShortcut>Ctrl+S</MenubarShortcut>
                         </MenubarItem>
-                        <MenubarItem disabled>New Incognito Window</MenubarItem>
+                        <MenubarItem onClick={closeTab}>Close Tab
+                            <MenubarShortcut>Ctrl+W</MenubarShortcut>
+                        </MenubarItem>
                     </MenubarGroup>
                     <MenubarSeparator />
                     <MenubarGroup>
-                        <MenubarSub>
-                            <MenubarSubTrigger>Share</MenubarSubTrigger>
-                            <MenubarSubContent>
-                                <MenubarGroup>
-                                    <MenubarItem>Email link</MenubarItem>
-                                    <MenubarItem>Messages</MenubarItem>
-                                    <MenubarItem>Notes</MenubarItem>
-                                </MenubarGroup>
-                            </MenubarSubContent>
-                        </MenubarSub>
+                        <MenubarItem onClick={exportCollection}>Export Collection (CSV/JSON)</MenubarItem>
+                        <MenubarItem onClick={importCollection}>Import Collection (CSV/JSON)</MenubarItem>
                     </MenubarGroup>
                     <MenubarSeparator />
                     <MenubarGroup>
-                        <MenubarItem>
-                            Print... <MenubarShortcut>⌘P</MenubarShortcut>
-                        </MenubarItem>
+                        <MenubarItem onClick={preferences}>Preferences</MenubarItem>
                     </MenubarGroup>
                 </MenubarContent>
             </MenubarMenu>
+            {/* Edit Menu */}
             <MenubarMenu>
                 <MenubarTrigger>Edit</MenubarTrigger>
                 <MenubarContent>
                     <MenubarGroup>
-                        <MenubarItem>
-                            Undo <MenubarShortcut>⌘Z</MenubarShortcut>
+                        <MenubarItem onClick={undo}>Undo
+                            <MenubarShortcut>Ctrl+Z</MenubarShortcut>
                         </MenubarItem>
-                        <MenubarItem>
-                            Redo <MenubarShortcut>⇧⌘Z</MenubarShortcut>
+                        <MenubarItem onClick={redo}>Redo
+                            <MenubarShortcut>Ctrl+Y</MenubarShortcut>
                         </MenubarItem>
-                    </MenubarGroup>
-                    <MenubarSeparator />
-                    <MenubarGroup>
-                        <MenubarSub>
-                            <MenubarSubTrigger>Find</MenubarSubTrigger>
-                            <MenubarSubContent>
-                                <MenubarGroup>
-                                    <MenubarItem>Search the web</MenubarItem>
-                                </MenubarGroup>
-                                <MenubarSeparator />
-                                <MenubarGroup>
-                                    <MenubarItem>Find...</MenubarItem>
-                                    <MenubarItem>Find Next</MenubarItem>
-                                    <MenubarItem>Find Previous</MenubarItem>
-                                </MenubarGroup>
-                            </MenubarSubContent>
-                        </MenubarSub>
-                    </MenubarGroup>
-                    <MenubarSeparator />
-                    <MenubarGroup>
-                        <MenubarItem>Cut</MenubarItem>
-                        <MenubarItem>Copy</MenubarItem>
-                        <MenubarItem>Paste</MenubarItem>
+                        <MenubarSeparator />
+                        <MenubarItem onClick={cut}>Cut
+                            <MenubarShortcut>Ctrl+X</MenubarShortcut>
+                        </MenubarItem>
+                        <MenubarItem onClick={copy}>Copy
+                            <MenubarShortcut>Ctrl+C</MenubarShortcut>
+                        </MenubarItem>
+                        <MenubarItem onClick={paste}>Paste
+                            <MenubarShortcut>Ctrl+V</MenubarShortcut>
+                        </MenubarItem>
+                        <MenubarSeparator />
+                        <MenubarItem onClick={find}>Find in Collection
+                            <MenubarShortcut>Ctrl+F</MenubarShortcut>
+                        </MenubarItem>
                     </MenubarGroup>
                 </MenubarContent>
             </MenubarMenu>
+            {/* View Menu */}
             <MenubarMenu>
                 <MenubarTrigger>View</MenubarTrigger>
-                <MenubarContent className="w-44">
+                <MenubarContent>
                     <MenubarGroup>
-                        <MenubarCheckboxItem>Bookmarks Bar</MenubarCheckboxItem>
-                        <MenubarCheckboxItem checked>Full URLs</MenubarCheckboxItem>
-                    </MenubarGroup>
-                    <MenubarSeparator />
-                    <MenubarGroup>
-                        <MenubarItem inset>
-                            Reload <MenubarShortcut>⌘R</MenubarShortcut>
+                        <MenubarItem onClick={reload}>Reload
+                            <MenubarShortcut>Ctrl+R</MenubarShortcut>
                         </MenubarItem>
-                        <MenubarItem disabled inset>
-                            Force Reload <MenubarShortcut>⇧⌘R</MenubarShortcut>
-                        </MenubarItem>
-                    </MenubarGroup>
-                    <MenubarSeparator />
-                    <MenubarGroup>
-                        <MenubarItem inset>Toggle Fullscreen</MenubarItem>
-                    </MenubarGroup>
-                    <MenubarSeparator />
-                    <MenubarGroup>
-                        <MenubarItem inset>Hide Sidebar</MenubarItem>
+                        <MenubarItem onClick={toggleSidebar}>Toggle Sidebar</MenubarItem>
+                        <MenubarItem onClick={showQueryHistory}>Show Query History</MenubarItem>
+                        <MenubarItem onClick={showSchemaPanel}>Show Schema Panel</MenubarItem>
+                        <MenubarSeparator />
+                        <MenubarCheckboxItem checked={darkTheme} onCheckedChange={toggleDarkTheme}>Dark Theme</MenubarCheckboxItem>
                     </MenubarGroup>
                 </MenubarContent>
             </MenubarMenu>
+            {/* Saved Connections Menu */}
             <MenubarMenu>
-                <MenubarTrigger>Profiles</MenubarTrigger>
+                <MenubarTrigger>Connections</MenubarTrigger>
                 <MenubarContent>
-                    <MenubarRadioGroup value="benoit">
-                        <MenubarRadioItem value="andy">Andy</MenubarRadioItem>
-                        <MenubarRadioItem value="benoit">Benoit</MenubarRadioItem>
-                        <MenubarRadioItem value="Luis">Luis</MenubarRadioItem>
-                    </MenubarRadioGroup>
-                    <MenubarSeparator />
                     <MenubarGroup>
-                        <MenubarItem inset>Edit...</MenubarItem>
+                        <MenubarItem onClick={openSavedConnection}>Open Saved Connection</MenubarItem>
+                        <MenubarItem onClick={saveCurrentConnection}>Save Current Connection</MenubarItem>
+                        <MenubarItem onClick={renameConnection}>Rename Connection</MenubarItem>
+                        <MenubarItem onClick={deleteConnection}>Delete Connection</MenubarItem>
                     </MenubarGroup>
-                    <MenubarSeparator />
+                </MenubarContent>
+            </MenubarMenu>
+            {/* Help Menu */}
+            <MenubarMenu>
+                <MenubarTrigger>Help</MenubarTrigger>
+                <MenubarContent>
                     <MenubarGroup>
-                        <MenubarItem inset>Add Profile...</MenubarItem>
+                        <MenubarItem onClick={help}>Documentation</MenubarItem>
+                        <MenubarItem onClick={reportIssue}>Report Issue</MenubarItem>
+                        <MenubarItem onClick={about}>About</MenubarItem>
                     </MenubarGroup>
                 </MenubarContent>
             </MenubarMenu>
         </Menubar>
-    )
-}
+    );
+};
 
 export default Menu

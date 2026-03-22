@@ -8,9 +8,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import React, { useState } from 'react';
-import { Toggle } from '@/components/ui/toggle';
 import { TlsCertificateSection } from './tls-certificate-section';
 import QueryParamsSection, { COMMON_QUERY_PARAMS } from './query-params-secton';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../ui/collapsible';
+import { ChevronDownIcon } from 'lucide-react';
 
 
 
@@ -43,7 +44,6 @@ export function ConnectionCreateForm({
     const [showPassword, setShowPassword] = useState(false);
     const [connectionStringError, setConnectionStringError] = useState<string | null>(null);
     const [displayedConnectionString, setDisplayedConnectionString] = useState(connectionString);
-    const [showParams, setShowParams] = useState(false);
     const [paramValues, setParamValues] = useState<Record<string, string>>({});
 
     // Sync displayed value with prop changes (e.g., after save/reset)
@@ -247,17 +247,19 @@ export function ConnectionCreateForm({
 
                         {/* Query params section at the bottom */}
                         <div className="space-y-1.5 mt-4">
-                            <Toggle
-                                pressed={showParams}
-                                onPressedChange={setShowParams}
-                                className="mb-2"
-                                aria-label="Show common query parameters"
-                            >
-                                {showParams ? 'Hide' : 'Show'} Common Query Parameters
-                            </Toggle>
-                            {showParams && (
-                                <QueryParamsSection paramValues={paramValues} setParamValues={setParamValues} />
-                            )}
+                            <Collapsible className="data-[state=open]:bg-muted">
+                                <CollapsibleTrigger asChild>
+                                    <Button variant="ghost" className="group w-full">
+                                        <span className="group-data-[state=open]:hidden">Show</span>
+                                        <span className="hidden group-data-[state=open]:inline">Hide</span>
+                                        <span className="ml-px">Common Query Parameters</span>
+                                        <ChevronDownIcon className="ml-auto group-data-[state=open]:rotate-180" />
+                                    </Button>
+                                </CollapsibleTrigger>
+                                <CollapsibleContent >
+                                    <QueryParamsSection paramValues={paramValues} setParamValues={setParamValues} />
+                                </CollapsibleContent>
+                            </Collapsible>
                             {/* TLS Certificate section, only if TLS is enabled */}
                             {tlsEnabled && (
                                 <TlsCertificateSection
