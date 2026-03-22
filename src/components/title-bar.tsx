@@ -17,7 +17,7 @@ export function TitleBar({ platform }: TitleBarProps) {
     return (
         <div className="flex w-full flex-col">
             <div
-                className={`flex h-10 shrink-0 items-center border-b border-border bg-background ${isMac ? 'pl-19 pr-4' : 'pl-4 pr-36'}`}
+                className={`flex h-10 shrink-0 items-center bg-background ${isMac ? 'pl-19 pr-4' : 'pl-4 pr-36'}`}
                 style={dragStyle}
             >
                 <div className="flex items-center gap-2 text-sm" style={noDragStyle}>

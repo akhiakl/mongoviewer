@@ -14,7 +14,7 @@ export default function App() {
       <TooltipProvider>
         <div className="flex h-screen flex-col overflow-hidden">
           <TitleBar platform={platform} />
-          <div className="flex min-h-0 flex-1 overflow-hidden p-2 md:p-3">
+          <div className="flex min-h-0 flex-1 overflow-hidden p-2 md:p-3 border-t border-border ">
             <AppView />
           </div>
         </div>
