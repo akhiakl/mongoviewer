@@ -2,6 +2,7 @@ export type ConnectionListItem = {
   id: string;
   name: string;
   createdAt: string;
+  uri: string;
 };
 
 export type ConnectionsState = {

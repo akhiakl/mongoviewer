@@ -4,9 +4,9 @@ import path from 'node:path';
 import { app } from 'electron/main';
 
 import type { ConnectionListItem, ConnectionsState } from '../shared/mongo-types';
+import { removeTlsCertificate } from './tls-certificate-service';
 
 type StoredConnection = ConnectionListItem & {
-    uri: string;
     tlsCertificatePath: string | null;
 };
 
@@ -83,6 +83,7 @@ function toSummary(connection: StoredConnection): ConnectionListItem {
         id: connection.id,
         name: connection.name,
         createdAt: connection.createdAt,
+        uri: connection.uri,
     };
 }
 
