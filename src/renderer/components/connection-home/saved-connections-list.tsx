@@ -51,7 +51,7 @@ export function SavedConnectionsList({
 
                             </Empty>
                         ) : (
-                            <div className="mt-1 space-y-2 overflow-auto pr-1">
+                            <div className="mt-1 grid grid-cols-4 gap-4 overflow-auto pr-1">
                                 {connections.map((connection) => (
                                     <ConnectionCard
                                         key={connection.id}

@@ -114,7 +114,7 @@ export function ViewerHeader({
             ) : null}
 
             <div className="mt-4 grid gap-3 lg:grid-cols-[minmax(0,20rem)_minmax(0,1fr)]">
-                <div className="rounded-lg border border-border/60 bg-muted/20 p-3">
+                <div className="rounded-lg border border-card/60 bg-card p-3">
                     <label className="mb-2 block text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
                         Quick Filter
                     </label>
@@ -131,7 +131,7 @@ export function ViewerHeader({
                         Filters only the records currently visible on this page. Use Mongo Query below to filter the full collection in the database.
                     </p>
                 </div>
-                <div className="rounded-lg border border-border/60 bg-muted/20 p-3">
+                <div className="rounded-lg border border-card/60 bg-card p-3">
                     <div className="flex flex-col gap-3">
                         <div>
                             <label className="mb-2 block text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">

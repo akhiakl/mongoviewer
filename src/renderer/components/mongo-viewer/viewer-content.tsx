@@ -50,7 +50,7 @@ export function ViewerContent({
     const showNoRecordsState = !loadingDocs && selection && filteredRecords.length === 0
 
     return (
-        <div className="flex flex-col px-4 py-4 md:px-6">
+        <div className="flex flex-col px-4 py-4 md:px-6 my-auto">
             <div className="flex flex-col">
                 <ViewerToolbar
                     loadingDocs={loadingDocs}

@@ -9,7 +9,7 @@ type ViewerNavigationProps = {
 
 export function ViewerNavigation({ activeConnectionName, onBack }: ViewerNavigationProps) {
     return (
-        <div className="mb-2 flex items-center justify-between gap-3 rounded-lg border border-border bg-card px-4 py-2.5">
+        <div className="flex items-center justify-between gap-3 bg-sidebar border-b border-border px-4 py-2.5">
             <div className="min-w-0 flex items-center gap-3">
                 <div className="flex size-9 items-center justify-center rounded-md bg-muted text-muted-foreground">
                     <Database className="size-4" />

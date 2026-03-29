@@ -5,13 +5,13 @@ type ResolvedTheme = 'light' | 'dark';
 
 const TITLE_BAR_OVERLAY = {
     light: {
-        color: '#f1f8f3',
-        symbolColor: '#152019',
+        color: '#f8f9fb',      // matches light --background: cool off-white
+        symbolColor: '#1a1c22',
         height: 40,
     },
     dark: {
-        color: '#0e1611',
-        symbolColor: '#ecf0ed',
+        color: '#0c0d10',      // matches dark --background: near-black neutral
+        symbolColor: '#e8eaed',
         height: 40,
     },
 } as const;

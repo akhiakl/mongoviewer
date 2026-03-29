@@ -195,9 +195,11 @@ export function MongoViewerClient({ connectionId, activeConnectionName, onBack }
                     />
 
                     {error ? (
-                        <Alert variant="destructive" className="mx-4 mt-4 md:mx-6">
-                            <AlertDescription>{error}</AlertDescription>
-                        </Alert>
+                        <div className="px-4 md:px-6">
+                            <Alert variant="destructive" className="mt-4">
+                                <AlertDescription>{error}</AlertDescription>
+                            </Alert>
+                        </div>
                     ) : null}
 
                     <ViewerContent
