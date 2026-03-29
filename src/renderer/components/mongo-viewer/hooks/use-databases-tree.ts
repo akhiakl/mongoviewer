@@ -3,14 +3,14 @@ import { useEffect, useState } from 'react';
 import type { DatabaseTreeItem } from '@/renderer/components/mongo-viewer/types';
 import { mongoViewerService } from '@/renderer/services/mongo-viewer-service';
 
-export function useDatabasesTree(connectionId: string) {
+export function useDatabasesTree(connectionId: string, refreshKey = 0) {
     const [tree, setTree] = useState<DatabaseTreeItem[]>([]);
     const [loadingTree, setLoadingTree] = useState(false);
     const [treeError, setTreeError] = useState<string | null>(null);
 
     useEffect(() => {
         void refreshTree();
-    }, [connectionId]);
+    }, [connectionId, refreshKey]);
 
     async function refreshTree() {
         setLoadingTree(true);

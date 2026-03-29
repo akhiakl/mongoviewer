@@ -1,6 +1,6 @@
 import { contextBridge } from 'electron';
 import { invoke } from './ipc';
-import type { DocumentsQuery, SaveConnectionInput } from '@/shared/mongo-types';
+import type { DocumentsQuery, SaveConnectionInput, UpdateConnectionInput } from '@/shared/mongo-types';
 
 export const api = {
     platform: process.platform,
@@ -13,6 +13,9 @@ export const api = {
 
     saveConnection: (input: SaveConnectionInput) =>
         invoke('mongo:save-connection', input),
+
+    updateConnection: (input: UpdateConnectionInput) =>
+        invoke('mongo:update-connection', input),
 
     deleteConnection: (connectionId: string) =>
         invoke('mongo:delete-connection', connectionId),

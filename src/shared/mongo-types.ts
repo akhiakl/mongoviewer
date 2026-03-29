@@ -15,6 +15,10 @@ export type SaveConnectionInput = {
   tlsCertificatePath?: string;
 };
 
+export type UpdateConnectionInput = SaveConnectionInput & {
+  connectionId: string;
+};
+
 export type DatabaseTreeItem = {
   name: string;
   collections: string[];

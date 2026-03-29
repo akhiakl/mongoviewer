@@ -3,6 +3,7 @@ import {
     deleteConnection,
     getConnection,
     getConnectionsState,
+    updateConnection,
 } from '../connection-store';
 
 import {
@@ -22,6 +23,7 @@ import {
 import type {
     DocumentsQuery,
     SaveConnectionInput,
+    UpdateConnectionInput,
 } from '@/shared/mongo-types';
 
 import {
@@ -93,6 +95,55 @@ export const mongoHandlers = {
             });
         } catch (error) {
             await removeTlsCertificate(persistedTlsCertificatePath);
+            throw error;
+        }
+    },
+
+    'mongo:update-connection': async (_event, input: UpdateConnectionInput) => {
+        const connectionId = requireNonEmptyString(
+            input.connectionId,
+            'Connection id is required.',
+        );
+        const name = requireNonEmptyString(input.name, 'Connection name is required.');
+        const connectionString = requireNonEmptyString(
+            input.connectionString,
+            'Connection string is required.',
+        );
+        const existingConnection = await getConnection(connectionId);
+        if (!existingConnection) {
+            throw new Error('Connection not found.');
+        }
+
+        const selectedTlsCertificatePath = input.tlsCertificatePath?.trim();
+
+        let persistedTlsCertificatePath: string | undefined;
+
+        if (selectedTlsCertificatePath) {
+            persistedTlsCertificatePath =
+                selectedTlsCertificatePath === existingConnection.tlsCertificatePath
+                    ? selectedTlsCertificatePath
+                    : await persistTlsCertificate(selectedTlsCertificatePath);
+        }
+
+        const uri = buildMongoConnectionString(
+            connectionString,
+            persistedTlsCertificatePath,
+        );
+
+        try {
+            return await updateConnection({
+                connectionId,
+                name,
+                uri,
+                tlsCertificatePath: persistedTlsCertificatePath,
+            });
+        } catch (error) {
+            if (
+                persistedTlsCertificatePath &&
+                persistedTlsCertificatePath !== existingConnection.tlsCertificatePath
+            ) {
+                await removeTlsCertificate(persistedTlsCertificatePath);
+            }
             throw error;
         }
     },

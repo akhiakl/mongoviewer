@@ -55,6 +55,7 @@ describe('ConnectionPage', () => {
                 ],
             },
             loadingConnections: false,
+            refreshConnections: vi.fn(),
         });
 
         const { Connections: ConnectionPage } = await import('@/renderer/pages/connections');
@@ -82,6 +83,7 @@ describe('ConnectionPage', () => {
             connectionError: null,
             connectionsState: { connections: [] },
             loadingConnections: false,
+            refreshConnections: vi.fn(),
         });
 
         const { Connections: ConnectionPage } = await import('@/renderer/pages/connections');
@@ -110,11 +112,13 @@ describe('ConnectionPage', () => {
                 connectionError: null,
                 connectionsState: { connections: [] },
                 loadingConnections: true,
+                refreshConnections: vi.fn(),
             })
             .mockReturnValueOnce({
                 connectionError: 'Unable to load saved connections.',
                 connectionsState: { connections: [] },
                 loadingConnections: false,
+                refreshConnections: vi.fn(),
             });
 
         const { Connections: ConnectionPage } = await import('@/renderer/pages/connections');

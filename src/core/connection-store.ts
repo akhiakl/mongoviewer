@@ -126,6 +126,54 @@ export async function createConnection(input: {
     });
 }
 
+export async function updateConnection(input: {
+    connectionId: string;
+    name: string;
+    uri: string;
+    tlsCertificatePath?: string;
+}) {
+    return mutateStore(async (store) => {
+        const normalizedConnectionId = input.connectionId.trim();
+        const normalizedName = input.name.trim();
+        if (!normalizedName) {
+            throw new Error('Connection name is required.');
+        }
+
+        const targetIndex = store.connections.findIndex(
+            (connection) => connection.id === normalizedConnectionId,
+        );
+        if (targetIndex === -1) {
+            throw new Error('Connection not found.');
+        }
+
+        const duplicate = store.connections.find(
+            (connection) =>
+                connection.id !== normalizedConnectionId &&
+                connection.name.toLowerCase() === normalizedName.toLowerCase(),
+        );
+        if (duplicate) {
+            throw new Error('A connection with this name already exists.');
+        }
+
+        const previousConnection = store.connections[targetIndex];
+        const nextTlsCertificatePath = input.tlsCertificatePath?.trim() || null;
+        const nextConnection: StoredConnection = {
+            ...previousConnection,
+            name: normalizedName,
+            uri: input.uri,
+            tlsCertificatePath: nextTlsCertificatePath,
+        };
+
+        store.connections[targetIndex] = nextConnection;
+
+        if (previousConnection.tlsCertificatePath !== nextTlsCertificatePath) {
+            await removeTlsCertificate(previousConnection.tlsCertificatePath);
+        }
+
+        return toSummary(nextConnection);
+    });
+}
+
 export async function deleteConnection(connectionId: string) {
     return mutateStore(async (store) => {
         const target = store.connections.find((connection) => connection.id === connectionId);

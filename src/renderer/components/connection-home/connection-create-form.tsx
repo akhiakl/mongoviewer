@@ -12,6 +12,7 @@ import React, { useState } from 'react';
 import { TlsCertificateSection } from './tls-certificate-section';
 import QueryParamsSection, { COMMON_QUERY_PARAMS } from './query-params-secton';
 import { ChevronDownIcon } from 'lucide-react';
+import { validateConnectionString } from '@/renderer/features/connections/connection-form-utils';
 
 
 
@@ -21,6 +22,10 @@ type ConnectionCreateFormProps = {
     tlsCertificatePath: string;
     saving: boolean;
     error: string | null;
+    title?: string | null;
+    description?: string | null;
+    submitLabel?: string;
+    formId?: string;
     onNameChange: (value: string) => void;
     onConnectionStringChange: (value: string) => void;
     onTlsCertificatePathChange: (value: string) => void;
@@ -35,13 +40,16 @@ export function ConnectionCreateForm({
     tlsCertificatePath,
     saving,
     error,
+    title = 'Create New Connection',
+    description = 'Save connections and inspect live MongoDB collections.',
+    submitLabel = 'Save Connection',
+    formId = 'connection-create-form',
     onNameChange,
     onConnectionStringChange,
     onTlsCertificatePathChange,
     onPickTlsCertificate,
     onSubmit,
 }: ConnectionCreateFormProps) {
-    const formId = 'connection-create-form';
     const [showPassword, setShowPassword] = useState(false);
     const [connectionStringError, setConnectionStringError] = useState<string | null>(null);
     const [displayedConnectionString, setDisplayedConnectionString] = useState(connectionString);
@@ -95,18 +103,6 @@ export function ConnectionCreateForm({
     // TLS enabled state is derived from paramValues
     const tlsEnabled = paramValues['tls'] === 'true';
     // Helper to update the connection string with new params
-
-    // Basic MongoDB connection string validation
-    function validateConnectionString(str: string): string | null {
-        if (!str.trim()) return 'Connection string is required.';
-        if (!/^mongodb(\+srv)?:\/\//.test(str.trim())) return 'Must start with mongodb:// or mongodb+srv://';
-        try {
-            new URL(str.trim());
-        } catch {
-            return 'Invalid connection string format.';
-        }
-        return null;
-    }
 
     function handleConnectionStringChange(value: string) {
         setDisplayedConnectionString(value);
@@ -172,12 +168,14 @@ export function ConnectionCreateForm({
     return (
         <TooltipProvider>
             <Card className="flex h-full min-h-0 w-full ring-0">
-                <CardHeader className="pb-4">
-                    <CardTitle>Create New Connection</CardTitle>
-                    <CardDescription>
-                        Save connections and inspect live MongoDB collections.
-                    </CardDescription>
-                </CardHeader>
+                {title || description ? (
+                    <CardHeader className="pb-4">
+                        {title ? <CardTitle>{title}</CardTitle> : null}
+                        {description ? (
+                            <CardDescription>{description}</CardDescription>
+                        ) : null}
+                    </CardHeader>
+                ) : null}
                 <CardContent className="flex-1 overflow-y-auto">
                     <form
                         id={formId}
@@ -281,7 +279,7 @@ export function ConnectionCreateForm({
                     ) : null}
 
                     <Button form={formId} type="submit" disabled={saving || !!connectionStringError} className="w-full">
-                        {saving ? 'Saving...' : 'Save Connection'}
+                        {saving ? 'Saving...' : submitLabel}
                     </Button>
                 </CardFooter>
             </Card>

@@ -15,6 +15,7 @@ export function useConnectionsController() {
     const hasLoaded = useConnectionsStore(selectConnectionsHasLoaded);
     const refreshConnections = useConnectionsStore((state) => state.refresh);
     const saveConnection = useConnectionsStore((state) => state.save);
+    const updateConnection = useConnectionsStore((state) => state.update);
     const removeConnection = useConnectionsStore((state) => state.remove);
     const pickTlsCertificate = useConnectionsStore((state) => state.pickTlsCertificate);
 
@@ -30,6 +31,7 @@ export function useConnectionsController() {
         connectionError,
         refreshConnections,
         saveConnection,
+        updateConnection,
         removeConnection,
         pickTlsCertificate,
     };

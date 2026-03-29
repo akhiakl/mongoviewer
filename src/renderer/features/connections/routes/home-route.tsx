@@ -7,6 +7,7 @@ export function HomeRoute() {
         loadingConnections,
         connectionError,
         saveConnection,
+        updateConnection,
         removeConnection,
         pickTlsCertificate,
     } = useConnectionsController();
@@ -17,6 +18,7 @@ export function HomeRoute() {
             loadingConnections={loadingConnections}
             connectionError={connectionError}
             onSaveConnection={saveConnection}
+            onUpdateConnection={updateConnection}
             onDeleteConnection={removeConnection}
             onPickTlsCertificate={pickTlsCertificate}
         />

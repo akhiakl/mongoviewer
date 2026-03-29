@@ -25,7 +25,11 @@ export function resetCollectionInsightsCache() {
   insightsCache.clear();
 }
 
-export function useCollectionInsights(connectionId: string, selection: Selection | null) {
+export function useCollectionInsights(
+  connectionId: string,
+  selection: Selection | null,
+  refreshKey = 0,
+) {
   const [insights, setInsights] = useState<CollectionInsights>({
     indexes: [],
     schemaSummary: null,
@@ -94,7 +98,7 @@ export function useCollectionInsights(connectionId: string, selection: Selection
     return () => {
       cancelled = true;
     };
-  }, [connectionId, selection]);
+  }, [connectionId, refreshKey, selection]);
 
   return {
     ...insights,

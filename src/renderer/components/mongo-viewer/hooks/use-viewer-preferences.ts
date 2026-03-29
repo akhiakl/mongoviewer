@@ -1,5 +1,4 @@
 import { useEffect } from 'react';
-import { useShallow } from 'zustand/react/shallow';
 
 import type { Selection, ViewMode } from '@/renderer/components/mongo-viewer/types';
 import {
@@ -13,9 +12,7 @@ import {
 } from '@/renderer/stores/viewer-preferences-store';
 
 export function useViewerPreferences(connectionId: string) {
-    const preferences = useViewerPreferencesStore(
-        useShallow(selectViewerPreferences(connectionId)),
-    );
+    const preferences = useViewerPreferencesStore(selectViewerPreferences(connectionId));
     const setStoredPreferences = useViewerPreferencesStore((state) => state.setPreferences);
 
     const schemaPanelOpen = useAppUiStore(selectSchemaPanelOpen);

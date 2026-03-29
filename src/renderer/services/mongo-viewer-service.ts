@@ -7,6 +7,7 @@ import type {
     DocumentsQuery,
     DocumentsResult,
     SaveConnectionInput,
+    UpdateConnectionInput,
 } from '@/shared/mongo-types';
 import { mongoViewer } from '@/renderer/renderer-api';
 import { logRendererError } from '@/renderer/services/logger';
@@ -35,6 +36,12 @@ export const mongoViewerService = {
             () => mongoViewer.saveConnection(input),
             { connectionName: input.name },
         ),
+    updateConnection: (input: UpdateConnectionInput) =>
+        invokeRendererApi<{ id: string; name: string }>(
+            'updateConnection',
+            () => mongoViewer.updateConnection(input),
+            { connectionId: input.connectionId, connectionName: input.name },
+        ),
     deleteConnection: (connectionId: string) =>
         invokeRendererApi('deleteConnection', () => mongoViewer.deleteConnection(connectionId), {
             connectionId,
@@ -42,6 +49,11 @@ export const mongoViewerService = {
     pickTlsCertificate: () =>
         invokeRendererApi<string | null>('pickTlsCertificate', () =>
             mongoViewer.pickTlsCertificate(),
+        ),
+    persistTlsCertificate: (path: string) =>
+        invokeRendererApi<string | null>('persistTlsCertificate', () =>
+            mongoViewer.persistTlsCertificate(path),
+            { sourcePath: path },
         ),
     listDatabaseTree: (connectionId: string) =>
         invokeRendererApi<DatabaseTreeItem[]>('listDatabaseTree', () =>

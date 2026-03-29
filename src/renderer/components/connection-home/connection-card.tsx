@@ -2,12 +2,16 @@ import { Copy, Check, Edit2, Trash2 } from 'lucide-react';
 import { ButtonGroup } from '@/renderer/components/ui/button-group';
 import { Button } from '@/renderer/components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription, CardFooter } from '@/renderer/components/ui/card';
+import { Badge } from '@/renderer/components/ui/badge';
 import type { ConnectionListItem } from '@/shared/mongo-types';
 import { Link } from "react-router";
+import type { ConnectionStatus } from '@/renderer/features/connections/store/connection-session-store';
 
 type ConnectionCardProps = {
     connection: ConnectionListItem;
     isCopied: boolean;
+    isRecent?: boolean;
+    status?: ConnectionStatus;
     onCopy: (connString: string, id: string) => void;
     onEdit: (connection: ConnectionListItem) => void;
     onDelete: (id: string, name: string) => void;
@@ -45,10 +49,21 @@ const timeAgo = (dateString: string) => {
 const ConnectionCard = ({
     connection,
     isCopied,
+    isRecent = false,
+    status,
     onCopy,
     onEdit,
     onDelete,
 }: ConnectionCardProps) => {
+    const statusLabel =
+        status?.kind === 'healthy'
+            ? 'Healthy'
+            : status?.kind === 'connecting'
+              ? 'Connecting'
+              : status?.kind === 'error'
+                ? 'Needs attention'
+                : null;
+
     return (
         <Card className="group hover:border-primary/50 transition">
             <CardHeader>
@@ -57,6 +72,16 @@ const ConnectionCard = ({
                         <CardTitle>{connection.name}</CardTitle>
                         <CardDescription className="mt-2">
                             <p>{getConnectionDetails(connection.uri)}</p>
+                            <div className="mt-2 flex flex-wrap gap-2">
+                                {isRecent ? <Badge variant="outline">Recent</Badge> : null}
+                                {statusLabel ? (
+                                    <Badge
+                                        variant={status?.kind === 'error' ? 'destructive' : 'outline'}
+                                    >
+                                        {statusLabel}
+                                    </Badge>
+                                ) : null}
+                            </div>
                         </CardDescription>
                     </div>
                     <div className="flex items-center gap-2 transition">

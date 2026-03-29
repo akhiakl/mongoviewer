@@ -156,8 +156,11 @@ export function useMenuCommands() {
                         type: 'checkbox',
                         label: 'Show Query History',
                         checked: queryHistoryOpen,
-                        enabled: false,
-                        run: showQueryHistory,
+                        enabled: isConnectionRoute,
+                        run: () => {
+                            logger.info('toggleQueryHistory', { checked: !queryHistoryOpen });
+                            showQueryHistory();
+                        },
                     },
                     {
                         id: 'view.schema-panel',

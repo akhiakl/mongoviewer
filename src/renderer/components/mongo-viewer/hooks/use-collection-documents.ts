@@ -11,6 +11,7 @@ type UseCollectionDocumentsArgs = {
   mongoQuery?: string;
   sortField?: string | null;
   sortDirection: SortDirection;
+  refreshKey?: number;
 };
 
 export function useCollectionDocuments({
@@ -21,6 +22,7 @@ export function useCollectionDocuments({
   mongoQuery,
   sortField,
   sortDirection,
+  refreshKey = 0,
 }: UseCollectionDocumentsArgs) {
   const [response, setResponse] = useState<DocumentsResponse | null>(null);
   const [loadingDocs, setLoadingDocs] = useState(false);
@@ -72,7 +74,7 @@ export function useCollectionDocuments({
     return () => {
       cancelled = true;
     };
-  }, [connectionId, mongoQuery, page, pageSize, selection, sortDirection, sortField]);
+  }, [connectionId, mongoQuery, page, pageSize, refreshKey, selection, sortDirection, sortField]);
 
   return {
     records: response?.records ?? [],

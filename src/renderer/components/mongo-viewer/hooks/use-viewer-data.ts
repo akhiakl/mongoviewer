@@ -17,6 +17,7 @@ type UseViewerDataOptions = {
     appliedMongoQuery: string;
     sortDirection: SortDirection;
     sortField: string | null;
+    refreshKey?: number;
 };
 
 export function useViewerData({
@@ -28,6 +29,7 @@ export function useViewerData({
     appliedMongoQuery,
     sortDirection,
     sortField,
+    refreshKey = 0,
 }: UseViewerDataOptions) {
     const { records, total, loadingDocs, docsError } = useCollectionDocuments({
         connectionId,
@@ -37,9 +39,10 @@ export function useViewerData({
         mongoQuery: appliedMongoQuery || undefined,
         sortDirection,
         sortField,
+        refreshKey,
     });
     const { indexes, insightsError, loadingInsights, schemaSummary, stats } =
-        useCollectionInsights(connectionId, selection);
+        useCollectionInsights(connectionId, selection, refreshKey);
 
     const debouncedQuickFilter = useDebouncedValue(quickFilter, 220);
 

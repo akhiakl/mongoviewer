@@ -39,6 +39,7 @@ describe('ViewerHeader', () => {
     render(
       <ViewerHeader
         activeConnectionName="Prod Cluster"
+        connectionStatus={{ kind: 'healthy', message: null, updatedAt: null }}
         appliedMongoQuery='{"status":"active"}'
         filteredRecordsCount={12}
         indexes={[
@@ -68,6 +69,7 @@ describe('ViewerHeader', () => {
         queryDraft='{"status":"active"}'
         queryValidationError={null}
         quickFilter="john"
+        onReconnect={vi.fn()}
         schemaSummary={{
           sampleSize: 2,
           fields: [
@@ -108,6 +110,7 @@ describe('ViewerHeader', () => {
     render(
       <ViewerHeader
         activeConnectionName={null}
+        connectionStatus={{ kind: 'idle', message: null, updatedAt: null }}
         appliedMongoQuery=""
         filteredRecordsCount={0}
         indexes={[]}
@@ -128,6 +131,7 @@ describe('ViewerHeader', () => {
         queryDraft='{"status":"active"}'
         queryValidationError={null}
         quickFilter=""
+        onReconnect={vi.fn()}
         schemaSummary={null}
         selection={{ db: 'app', collection: 'users' }}
         showInsights={false}
@@ -165,6 +169,7 @@ describe('ViewerHeader', () => {
       return (
         <ViewerHeader
           activeConnectionName="Prod Cluster"
+          connectionStatus={{ kind: 'healthy', message: null, updatedAt: null }}
           appliedMongoQuery=""
           filteredRecordsCount={2}
           indexes={[
@@ -194,6 +199,7 @@ describe('ViewerHeader', () => {
           queryDraft=""
           queryValidationError={null}
           quickFilter=""
+          onReconnect={vi.fn()}
           schemaSummary={{
             sampleSize: 2,
             fields: [
@@ -228,6 +234,7 @@ describe('ViewerHeader', () => {
     render(
       <ViewerHeader
         activeConnectionName="Prod Cluster"
+        connectionStatus={{ kind: 'error', message: 'TLS failed', updatedAt: null }}
         appliedMongoQuery=""
         filteredRecordsCount={0}
         indexes={[]}
@@ -248,6 +255,7 @@ describe('ViewerHeader', () => {
         queryDraft='{"status":'
         queryValidationError="Unexpected end of input"
         quickFilter=""
+        onReconnect={vi.fn()}
         schemaSummary={null}
         selection={{ db: 'app', collection: 'users' }}
         showInsights={false}
@@ -264,6 +272,7 @@ describe('ViewerHeader', () => {
     render(
       <ViewerHeader
         activeConnectionName={null}
+        connectionStatus={{ kind: 'idle', message: null, updatedAt: null }}
         appliedMongoQuery=""
         filteredRecordsCount={0}
         indexes={[]}
@@ -284,6 +293,7 @@ describe('ViewerHeader', () => {
         queryDraft=""
         queryValidationError={null}
         quickFilter=""
+        onReconnect={vi.fn()}
         schemaSummary={null}
         selection={null}
         showInsights={false}

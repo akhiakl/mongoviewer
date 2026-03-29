@@ -1,4 +1,5 @@
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/renderer/components/ui/empty';
+import type { ConnectionStatus } from '@/renderer/features/connections/store/connection-session-store';
 import type { ConnectionListItem, ConnectionsState } from '@/shared/mongo-types';
 import ConnectionCard from './connection-card';
 import { Link2 } from 'lucide-react';
@@ -7,6 +8,8 @@ type SavedConnectionsListProps = {
     connectionsState: ConnectionsState;
     loadingConnections: boolean;
     copiedId: string | null;
+    recentConnectionIds?: string[];
+    statusesByConnectionId?: Record<string, ConnectionStatus>;
     onCopy: (connString: string, id: string) => void;
     onEdit: (connection: ConnectionListItem) => void;
     onDelete: (id: string, name: string) => void;
@@ -16,6 +19,8 @@ export function SavedConnectionsList({
     connectionsState,
     loadingConnections,
     copiedId,
+    recentConnectionIds = [],
+    statusesByConnectionId = {},
     onCopy,
     onEdit,
     onDelete,
@@ -57,6 +62,8 @@ export function SavedConnectionsList({
                                         key={connection.id}
                                         connection={connection}
                                         isCopied={copiedId === connection.id}
+                                        isRecent={recentConnectionIds.includes(connection.id)}
+                                        status={statusesByConnectionId[connection.id]}
                                         onCopy={onCopy}
                                         onEdit={onEdit}
                                         onDelete={onDelete}

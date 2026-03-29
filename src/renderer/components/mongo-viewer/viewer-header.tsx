@@ -6,6 +6,7 @@ import { Button } from "@/renderer/components/ui/button"
 import { Collapsible, CollapsibleContent } from "@/renderer/components/ui/collapsible"
 import { Input } from "@/renderer/components/ui/input"
 import { QueryEditor } from "@/renderer/components/mongo-viewer/query-editor"
+import type { ConnectionStatus } from "@/renderer/features/connections/store/connection-session-store"
 import type { QueryPreset } from "@/renderer/components/mongo-viewer/query-presets"
 import type {
     CollectionIndexSummary,
@@ -15,6 +16,7 @@ import type {
 } from "@/renderer/components/mongo-viewer/types"
 type ViewerHeaderProps = {
     activeConnectionName: string | null
+    connectionStatus: ConnectionStatus
     appliedMongoQuery: string
     filteredRecordsCount: number
     indexes: CollectionIndexSummary[]
@@ -35,6 +37,7 @@ type ViewerHeaderProps = {
     queryDraft: string
     quickFilter: string
     queryValidationError: string | null
+    onReconnect: () => void
     schemaSummary: CollectionSchemaSummary | null
     selection: Selection | null
     showInsights: boolean
@@ -44,6 +47,7 @@ type ViewerHeaderProps = {
 
 export function ViewerHeader({
     activeConnectionName,
+    connectionStatus,
     appliedMongoQuery,
     filteredRecordsCount,
     indexes,
@@ -64,6 +68,7 @@ export function ViewerHeader({
     queryDraft,
     quickFilter,
     queryValidationError,
+    onReconnect,
     schemaSummary,
     selection,
     showInsights,
@@ -81,8 +86,28 @@ export function ViewerHeader({
                     <span>
                         {activeConnectionName ? `Active connection: ${activeConnectionName}` : "Select a saved connection to start browsing."}
                     </span>
+                    {connectionStatus.kind !== 'idle' ? (
+                        <Badge variant={connectionStatus.kind === 'error' ? 'destructive' : 'outline'}>
+                            {connectionStatus.kind === 'healthy'
+                                ? 'Connected'
+                                : connectionStatus.kind === 'connecting'
+                                  ? 'Reconnecting'
+                                  : 'Connection issue'}
+                        </Badge>
+                    ) : null}
                     {quickFilter ? <Badge variant="outline">{filteredRecordsCount.toLocaleString()} shown</Badge> : null}
                     {appliedMongoQuery ? <Badge variant="outline">query active</Badge> : null}
+                    {connectionStatus.kind === 'error' ? (
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="h-7 px-2 text-xs"
+                            onClick={onReconnect}
+                        >
+                            Reconnect
+                        </Button>
+                    ) : null}
                     {selection ? (
                         <Button
                             type="button"

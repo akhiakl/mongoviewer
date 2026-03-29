@@ -7,6 +7,7 @@ import type {
     DocumentsQuery,
     DocumentsResult,
     SaveConnectionInput,
+    UpdateConnectionInput,
 } from '../shared/mongo-types';
 
 export { };
@@ -17,6 +18,7 @@ declare global {
             listDatabases(connectionString: string): Promise<string[]>;
             listConnections(): Promise<ConnectionsState>;
             saveConnection(input: SaveConnectionInput): Promise<{ id: string; name: string }>;
+            updateConnection(input: UpdateConnectionInput): Promise<{ id: string; name: string }>;
             deleteConnection(connectionId: string): Promise<void>;
             listDatabaseTree(connectionId: string): Promise<DatabaseTreeItem[]>;
             listDocuments(query: DocumentsQuery): Promise<DocumentsResult>;
@@ -24,6 +26,7 @@ declare global {
             getCollectionStats(query: DocumentsQuery): Promise<CollectionStats>;
             getCollectionSchemaSummary(query: DocumentsQuery): Promise<CollectionSchemaSummary>;
             pickTlsCertificate(): Promise<string | null>;
+            persistTlsCertificate(path: string): Promise<string | null>;
             setThemePreference(themePreference: 'system' | 'light' | 'dark'): Promise<void>;
         };
     }

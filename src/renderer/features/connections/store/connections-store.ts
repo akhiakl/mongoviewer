@@ -5,6 +5,7 @@ import type {
     ConnectionListItem,
     ConnectionsState,
     SaveConnectionInput,
+    UpdateConnectionInput,
 } from '@/shared/mongo-types';
 
 export type ConnectionsStoreState = {
@@ -14,6 +15,7 @@ export type ConnectionsStoreState = {
     hasLoaded: boolean;
     refresh: (force?: boolean) => Promise<void>;
     save: (input: SaveConnectionInput) => Promise<void>;
+    update: (input: UpdateConnectionInput) => Promise<void>;
     remove: (connectionId: string) => Promise<void>;
     pickTlsCertificate: () => Promise<string | null>;
     getById: (connectionId: string) => ConnectionListItem | null;
@@ -76,6 +78,19 @@ export const useConnectionsStore = create<ConnectionsStoreState>((set, get) => (
         } catch (error) {
             set({
                 error: normalizeError(error, 'Unable to save connection.'),
+            });
+            throw error;
+        }
+    },
+    update: async (input) => {
+        set({ error: null });
+
+        try {
+            await mongoViewerService.updateConnection(input);
+            await get().refresh(true);
+        } catch (error) {
+            set({
+                error: normalizeError(error, 'Unable to update connection.'),
             });
             throw error;
         }

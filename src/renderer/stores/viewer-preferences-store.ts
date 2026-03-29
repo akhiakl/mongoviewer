@@ -71,7 +71,5 @@ export const useViewerPreferencesStore = create<ViewerPreferencesStoreState>()(
 );
 
 export const selectViewerPreferences =
-    (connectionId: string) => (state: ViewerPreferencesStoreState) => ({
-        ...DEFAULT_VIEWER_PREFERENCES,
-        ...state.preferencesByConnection[connectionId],
-    });
+    (connectionId: string) => (state: ViewerPreferencesStoreState) =>
+        state.preferencesByConnection[connectionId] ?? DEFAULT_VIEWER_PREFERENCES;

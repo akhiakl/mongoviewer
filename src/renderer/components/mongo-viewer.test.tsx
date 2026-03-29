@@ -2,6 +2,8 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { MongoViewerClient } from '@/renderer/components/mongo-viewer';
+import { useConnectionSessionStore } from '@/renderer/features/connections/store/connection-session-store';
+import { useQueryHistoryStore } from '@/renderer/features/viewer/store/query-history-store';
 import { useAppUiStore } from '@/renderer/stores/app-ui-store';
 import { useViewerPreferencesStore } from '@/renderer/stores/viewer-preferences-store';
 
@@ -95,6 +97,13 @@ describe('MongoViewerClient', () => {
     });
     useViewerPreferencesStore.setState({
       preferencesByConnection: {},
+    });
+    useConnectionSessionStore.setState({
+      recentConnectionIds: [],
+      statusesByConnectionId: {},
+    });
+    useQueryHistoryStore.setState({
+      entriesByConnectionId: {},
     });
     useDatabasesTreeMock.mockReturnValue({
       tree: [{ name: 'app', collections: ['users', 'orders'] }],
@@ -447,6 +456,58 @@ describe('MongoViewerClient', () => {
     await waitFor(() => {
       expect(screen.getByText('No records match the current quick filter.')).toBeInTheDocument();
       expect(screen.getByRole('button', { name: 'Clear Quick Filter' })).toBeInTheDocument();
+    });
+  });
+
+  it('shows guided retry feedback for connection errors and lets users retry', async () => {
+    const refreshTree = vi.fn();
+
+    useDatabasesTreeMock.mockReturnValue({
+      tree: [{ name: 'app', collections: ['users'] }],
+      loadingTree: false,
+      treeError: null,
+      refreshTree,
+    });
+    useCollectionDocumentsMock.mockImplementation(
+      ({
+        mongoQuery,
+      }: {
+        mongoQuery?: string
+      }) => ({
+        records: [],
+        total: 0,
+        currentPage: 1,
+        loadingDocs: false,
+        docsError: mongoQuery ? 'TLS certificate mismatch' : null,
+      }),
+    );
+
+    render(
+      <MongoViewerClient
+        connectionId="conn-1"
+        activeConnectionName="Prod Cluster"
+        onBack={vi.fn()}
+      />,
+    );
+
+    fireEvent.change(screen.getByLabelText('Mongo query editor'), {
+      target: { value: '{"status":"active"}' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Apply Query' }));
+
+    await waitFor(() => {
+      expect(screen.getByText('TLS or certificate issue')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Retry Connection' })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Clear Query' })).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Retry Connection' }));
+    expect(refreshTree).toHaveBeenCalledTimes(1);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Clear Query' }));
+
+    await waitFor(() => {
+      expect(screen.queryByText('TLS or certificate issue')).not.toBeInTheDocument();
     });
   });
 
