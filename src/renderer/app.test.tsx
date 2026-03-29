@@ -1,5 +1,6 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
+import { Link, MemoryRouter } from 'react-router';
 
 const useConnectionsMock = vi.fn();
 
@@ -9,27 +10,23 @@ vi.mock('@/renderer/renderer-api', () => ({
   },
 }));
 
-vi.mock('@/hooks/use-connections', () => ({
+vi.mock('@/renderer/hooks/use-connections', () => ({
   useConnections: () => useConnectionsMock(),
 }));
 
-vi.mock('@/components/title-bar', () => ({
+vi.mock('@/renderer/components/title-bar', () => ({
   TitleBar: ({ platform }: { platform: string }) => <div>TitleBar:{platform}</div>,
 }));
 
-vi.mock('@/components/connection-home', () => ({
-  ConnectionHome: ({
-    onActivateConnection,
-  }: {
-    onActivateConnection: (connectionId: string) => Promise<void>
-  }) => (
-    <button type="button" onClick={() => void onActivateConnection('conn-1')}>
+vi.mock('@/renderer/components/connection-home', () => ({
+  ConnectionHome: () => (
+    <Link to="/connections/conn-1">
       Open Connection
-    </button>
+    </Link>
   ),
 }));
 
-vi.mock('@/components/mongo-viewer', () => ({
+vi.mock('@/renderer/components/mongo-viewer', () => ({
   MongoViewerClient: ({
     activeConnectionName,
     onBack,
@@ -47,49 +44,38 @@ vi.mock('@/components/mongo-viewer', () => ({
 }));
 
 describe('App', () => {
-  it('moves into the viewer after activation and clears the active connection when going back', async () => {
-    const activateConnection = vi.fn(async (connectionId: string) => {
-      expect(connectionId).toBe('conn-1');
-    });
-    const clearActiveConnection = vi.fn(async () => undefined);
+  it('routes into the viewer page and navigates back to connections', async () => {
     const state = {
-      connections: [{ id: 'conn-1', name: 'Prod', createdAt: '2026-01-01T00:00:00.000Z' }],
-      activeConnectionId: null as string | null,
+      connections: [{ id: 'conn-1', name: 'Prod', createdAt: '2026-01-01T00:00:00.000Z', uri: 'mongodb://prod' }],
     };
 
-    useConnectionsMock.mockImplementation(() => ({
+    useConnectionsMock.mockReturnValue({
       connectionsState: state,
       loadingConnections: false,
       connectionError: null,
       saveConnection: vi.fn(async () => undefined),
-      activateConnection: vi.fn(async (connectionId: string) => {
-        await activateConnection(connectionId);
-        state.activeConnectionId = connectionId;
-      }),
-      clearActiveConnection: vi.fn(async () => {
-        await clearActiveConnection();
-        state.activeConnectionId = null;
-      }),
       removeConnection: vi.fn(async () => undefined),
       pickTlsCertificate: vi.fn(async () => null),
-    }));
+    });
 
     const { default: App } = await import('@/renderer/app');
 
-    render(<App />);
+    render(
+      <MemoryRouter initialEntries={['/']}>
+        <App />
+      </MemoryRouter>,
+    );
 
-    fireEvent.click(screen.getByRole('button', { name: 'Open Connection' }));
+    fireEvent.click(screen.getByRole('link', { name: 'Open Connection' }));
 
     await waitFor(() => {
-      expect(activateConnection).toHaveBeenCalledWith('conn-1');
       expect(screen.getByText('Viewer:Prod')).toBeInTheDocument();
     });
 
     fireEvent.click(screen.getByRole('button', { name: 'Back To Connections' }));
 
     await waitFor(() => {
-      expect(clearActiveConnection).toHaveBeenCalledTimes(1);
-      expect(screen.getByRole('button', { name: 'Open Connection' })).toBeInTheDocument();
+      expect(screen.getByRole('link', { name: 'Open Connection' })).toBeInTheDocument();
     });
   });
 });

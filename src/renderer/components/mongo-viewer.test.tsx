@@ -7,7 +7,7 @@ const useDatabasesTreeMock = vi.fn();
 const useCollectionDocumentsMock = vi.fn();
 const useCollectionInsightsMock = vi.fn();
 
-vi.mock('@/components/mongo-viewer/query-editor', () => ({
+vi.mock('@/renderer/components/mongo-viewer/query-editor', () => ({
   QueryEditor: ({
     disabled,
     fieldNames,
@@ -37,19 +37,19 @@ vi.mock('@/components/mongo-viewer/query-editor', () => ({
   ),
 }));
 
-vi.mock('@/components/mongo-viewer/hooks/use-databases-tree', () => ({
+vi.mock('@/renderer/components/mongo-viewer/hooks/use-databases-tree', () => ({
   useDatabasesTree: (...args: unknown[]) => useDatabasesTreeMock(...args),
 }));
 
-vi.mock('@/components/mongo-viewer/hooks/use-collection-documents', () => ({
+vi.mock('@/renderer/components/mongo-viewer/hooks/use-collection-documents', () => ({
   useCollectionDocuments: (...args: unknown[]) => useCollectionDocumentsMock(...args),
 }));
 
-vi.mock('@/components/mongo-viewer/hooks/use-collection-insights', () => ({
+vi.mock('@/renderer/components/mongo-viewer/hooks/use-collection-insights', () => ({
   useCollectionInsights: (...args: unknown[]) => useCollectionInsightsMock(...args),
 }));
 
-vi.mock('@/components/mongo-viewer/databases-sidebar', () => ({
+vi.mock('@/renderer/components/mongo-viewer/databases-sidebar', () => ({
   DatabasesSidebar: ({
     onRefresh,
     onSelectCollection,
@@ -71,13 +71,13 @@ vi.mock('@/components/mongo-viewer/databases-sidebar', () => ({
   ),
 }));
 
-vi.mock('@/components/mongo-viewer/records-table', () => ({
+vi.mock('@/renderer/components/mongo-viewer/records-table', () => ({
   RecordsTable: ({ records }: { records: Array<Record<string, unknown>> }) => (
     <div>Table Count:{records.length}</div>
   ),
 }));
 
-vi.mock('@/components/mongo-viewer/records-json-list', () => ({
+vi.mock('@/renderer/components/mongo-viewer/records-json-list', () => ({
   RecordsJsonList: ({ records }: { records: Array<Record<string, unknown>> }) => (
     <div>Json Count:{records.length}</div>
   ),
@@ -159,7 +159,7 @@ describe('MongoViewerClient', () => {
   it('supports quick filtering, query apply, server sorting, page sizing, and view switching', async () => {
     render(
       <MongoViewerClient
-        activeConnectionId="conn-1"
+        connectionId="conn-1"
         activeConnectionName="Prod Cluster"
         onBack={vi.fn()}
       />,
@@ -256,7 +256,7 @@ describe('MongoViewerClient', () => {
   it('shows inline recovery actions for invalid query and empty result states', async () => {
     render(
       <MongoViewerClient
-        activeConnectionId="conn-1"
+        connectionId="conn-1"
         activeConnectionName="Prod Cluster"
         onBack={vi.fn()}
       />,
@@ -319,7 +319,7 @@ describe('MongoViewerClient', () => {
 
     render(
       <MongoViewerClient
-        activeConnectionId="conn-1"
+        connectionId="conn-1"
         activeConnectionName="Prod Cluster"
         onBack={onBack}
       />,
@@ -357,38 +357,7 @@ describe('MongoViewerClient', () => {
     expect(onBack).toHaveBeenCalledTimes(1);
   });
 
-  it('shows empty and loading states for disconnected, loading, empty, and unmatched views', async () => {
-    useDatabasesTreeMock.mockReturnValue({
-      tree: [],
-      loadingTree: false,
-      treeError: null,
-      refreshTree: vi.fn(),
-    });
-    useCollectionDocumentsMock.mockReturnValue({
-      records: [],
-      total: 0,
-      currentPage: 1,
-      loadingDocs: false,
-      docsError: null,
-    });
-    useCollectionInsightsMock.mockReturnValue({
-      indexes: [],
-      schemaSummary: null,
-      stats: null,
-      loadingInsights: false,
-      insightsError: null,
-    });
-
-    const { rerender } = render(
-      <MongoViewerClient
-        activeConnectionId={null}
-        activeConnectionName={null}
-        onBack={vi.fn()}
-      />,
-    );
-
-    expect(screen.getByText('Save or activate a connection to start browsing.')).toBeInTheDocument();
-
+  it('shows loading, empty, and unmatched views', async () => {
     useDatabasesTreeMock.mockReturnValue({
       tree: [{ name: 'app', collections: ['users'] }],
       loadingTree: false,
@@ -402,10 +371,17 @@ describe('MongoViewerClient', () => {
       loadingDocs: true,
       docsError: null,
     });
+    useCollectionInsightsMock.mockReturnValue({
+      indexes: [],
+      schemaSummary: null,
+      stats: null,
+      loadingInsights: false,
+      insightsError: null,
+    });
 
-    rerender(
+    const { rerender } = render(
       <MongoViewerClient
-        activeConnectionId="conn-1"
+        connectionId="conn-1"
         activeConnectionName="Prod Cluster"
         onBack={vi.fn()}
       />,
@@ -425,7 +401,7 @@ describe('MongoViewerClient', () => {
 
     rerender(
       <MongoViewerClient
-        activeConnectionId="conn-1"
+        connectionId="conn-1"
         activeConnectionName="Prod Cluster"
         onBack={vi.fn()}
       />,
@@ -445,7 +421,7 @@ describe('MongoViewerClient', () => {
 
     rerender(
       <MongoViewerClient
-        activeConnectionId="conn-1"
+        connectionId="conn-1"
         activeConnectionName="Prod Cluster"
         onBack={vi.fn()}
       />,

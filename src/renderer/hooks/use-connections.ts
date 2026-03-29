@@ -5,7 +5,6 @@ import { mongoViewer } from '@/renderer/renderer-api';
 
 const INITIAL_CONNECTIONS_STATE: ConnectionsState = {
     connections: [],
-    activeConnectionId: null,
 };
 
 export function useConnections() {
@@ -46,46 +45,13 @@ export function useConnections() {
         }
     }
 
-    async function activateConnection(connectionId: string) {
-        setConnectionError(null);
-
-        try {
-            await mongoViewer.setActiveConnection(connectionId);
-            setConnectionsState((current) => ({
-                ...current,
-                activeConnectionId: connectionId,
-            }));
-        } catch (error) {
-            const message = error instanceof Error ? error.message : 'Unable to activate connection.';
-            setConnectionError(message);
-            throw error;
-        }
-    }
-
-    async function clearActiveConnection() {
-        setConnectionError(null);
-
-        try {
-            const result = await mongoViewer.clearActiveConnection();
-            setConnectionsState((current) => ({
-                ...current,
-                activeConnectionId: result.activeConnectionId,
-            }));
-        } catch (error) {
-            const message = error instanceof Error ? error.message : 'Unable to clear the active connection.';
-            setConnectionError(message);
-            throw error;
-        }
-    }
-
     async function removeConnection(connectionId: string) {
         setConnectionError(null);
 
         try {
-            const result = await mongoViewer.deleteConnection(connectionId);
+            await mongoViewer.deleteConnection(connectionId);
             setConnectionsState((current) => ({
                 connections: current.connections.filter((item) => item.id !== connectionId),
-                activeConnectionId: result.activeConnectionId,
             }));
         } catch (error) {
             const message = error instanceof Error ? error.message : 'Unable to delete connection.';
@@ -113,8 +79,6 @@ export function useConnections() {
         connectionError,
         refreshConnections,
         saveConnection,
-        activateConnection,
-        clearActiveConnection,
         removeConnection,
         pickTlsCertificate,
     };

@@ -1,10 +1,8 @@
 import {
-    clearActiveConnection,
     createConnection,
     deleteConnection,
-    getActiveConnection,
+    getConnection,
     getConnectionsState,
-    setActiveConnection,
 } from '../connection-store';
 
 import {
@@ -33,6 +31,15 @@ import {
 
 import { IpcHandlerMap } from '@/shared/types';
 import { buildMongoConnectionString } from '../mongo-connection';
+
+async function getConnectionUri(connectionId: string) {
+    const connection = await getConnection(connectionId);
+    if (!connection) {
+        throw new Error('Connection not found.');
+    }
+
+    return connection.uri;
+}
 
 export const mongoHandlers = {
     'mongo:list-databases': async (_event, connectionString: string) => {
@@ -99,69 +106,32 @@ export const mongoHandlers = {
         return deleteConnection(normalizedConnectionId);
     },
 
-    'mongo:set-active-connection': async (_event, connectionId: string) => {
+    'mongo:list-database-tree': async (_event, connectionId: string) => {
         const normalizedConnectionId = requireNonEmptyString(
             connectionId,
             'Connection id is required.',
         );
 
-        return setActiveConnection(normalizedConnectionId);
-    },
-
-    'mongo:clear-active-connection': async () => {
-        return clearActiveConnection();
-    },
-
-    'mongo:list-database-tree': async () => {
-        const activeConnection = await getActiveConnection();
-        if (!activeConnection) {
-            throw new Error('No active connection selected.');
-        }
-
-        return listDatabaseTree(activeConnection.uri);
+        return listDatabaseTree(await getConnectionUri(normalizedConnectionId));
     },
 
     'mongo:list-documents': async (_event, query: DocumentsQuery) => {
         validateDocumentsQuery(query);
-
-        const activeConnection = await getActiveConnection();
-        if (!activeConnection) {
-            throw new Error('No active connection selected.');
-        }
-
-        return listDocuments(activeConnection.uri, query);
+        return listDocuments(await getConnectionUri(query.connectionId), query);
     },
 
     'mongo:get-collection-indexes': async (_event, query: DocumentsQuery) => {
         validateDocumentsQuery(query);
-
-        const activeConnection = await getActiveConnection();
-        if (!activeConnection) {
-            throw new Error('No active connection selected.');
-        }
-
-        return listCollectionIndexes(activeConnection.uri, query);
+        return listCollectionIndexes(await getConnectionUri(query.connectionId), query);
     },
 
     'mongo:get-collection-stats': async (_event, query: DocumentsQuery) => {
         validateDocumentsQuery(query);
-
-        const activeConnection = await getActiveConnection();
-        if (!activeConnection) {
-            throw new Error('No active connection selected.');
-        }
-
-        return getCollectionStats(activeConnection.uri, query);
+        return getCollectionStats(await getConnectionUri(query.connectionId), query);
     },
 
     'mongo:get-collection-schema-summary': async (_event, query: DocumentsQuery) => {
         validateDocumentsQuery(query);
-
-        const activeConnection = await getActiveConnection();
-        if (!activeConnection) {
-            throw new Error('No active connection selected.');
-        }
-
-        return getCollectionSchemaSummary(activeConnection.uri, query);
+        return getCollectionSchemaSummary(await getConnectionUri(query.connectionId), query);
     },
 } satisfies IpcHandlerMap<'mongo'>;

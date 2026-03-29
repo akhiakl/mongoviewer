@@ -3,6 +3,18 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { ConnectionCreateForm } from '@/renderer/components/connection-home/connection-create-form';
 
+class ResizeObserverMock {
+    observe() { }
+    unobserve() { }
+    disconnect() { }
+}
+
+Object.defineProperty(globalThis, 'ResizeObserver', {
+    configurable: true,
+    writable: true,
+    value: ResizeObserverMock,
+});
+
 describe('ConnectionCreateForm', () => {
     it('submits form and calls onSubmit', () => {
         const onSubmit = vi.fn(async () => undefined);
@@ -22,14 +34,13 @@ describe('ConnectionCreateForm', () => {
             />,
         );
 
-        const form = screen.getByRole('button', { name: 'Save Connection' }).closest('form');
+        const form = document.getElementById('connection-create-form');
         expect(form).not.toBeNull();
         if (form) {
             fireEvent.submit(form);
         }
         expect(onSubmit).toHaveBeenCalledTimes(1);
     });
-
 
     it('calls file picker callback when Choose File is clicked', () => {
         const onPickTlsCertificate = vi.fn(async () => undefined);
@@ -49,13 +60,10 @@ describe('ConnectionCreateForm', () => {
             />,
         );
 
-        // TLS section is visible because tls param is set
-        fireEvent.click(screen.getByRole('button', { name: /Show common query parameters/i }));
-        // The Choose File button should be present
+        fireEvent.click(screen.getByRole('button', { name: /common query parameters/i }));
         fireEvent.click(screen.getByRole('button', { name: 'Choose File' }));
         expect(onPickTlsCertificate).toHaveBeenCalledTimes(1);
     });
-
 
     it('shows clear button when cert path exists and clears it', () => {
         const onTlsCertificatePathChange = vi.fn();
@@ -75,11 +83,10 @@ describe('ConnectionCreateForm', () => {
             />,
         );
 
-        fireEvent.click(screen.getByRole('button', { name: /Show common query parameters/i }));
+        fireEvent.click(screen.getByRole('button', { name: /common query parameters/i }));
         fireEvent.click(screen.getByRole('button', { name: 'Clear' }));
         expect(onTlsCertificatePathChange).toHaveBeenCalledWith('');
     });
-
 
     it('renders error message when provided', () => {
         render(
@@ -96,10 +103,11 @@ describe('ConnectionCreateForm', () => {
                 onSubmit={vi.fn(async () => undefined)}
             />,
         );
+
         expect(screen.getByText('Unable to save')).toBeInTheDocument();
     });
 
-    it('shows tooltips for all help icons', async () => {
+    it('shows tooltips for all help icons', () => {
         render(
             <ConnectionCreateForm
                 name=""
@@ -114,14 +122,13 @@ describe('ConnectionCreateForm', () => {
                 onSubmit={vi.fn(async () => undefined)}
             />,
         );
-        // There are two help icons (ⓘ)
-        const helpIcons = screen.getAllByText('ⓘ');
-        expect(helpIcons.length).toBe(2);
-    });
 
+        expect(screen.getAllByText('ⓘ')).toHaveLength(2);
+    });
 
     it('shows connection string validation errors after change', () => {
         const onConnectionStringChange = vi.fn();
+
         render(
             <ConnectionCreateForm
                 name=""
@@ -136,11 +143,13 @@ describe('ConnectionCreateForm', () => {
                 onSubmit={vi.fn(async () => undefined)}
             />,
         );
-        const textarea = screen.getByLabelText('Connection string');
-        fireEvent.change(textarea, { target: { value: 'not-a-mongo-uri' } });
+
+        fireEvent.change(screen.getByLabelText('Connection string'), {
+            target: { value: 'not-a-mongo-uri' },
+        });
+
         expect(screen.getByText(/Must start with mongodb/)).toBeInTheDocument();
     });
-
 
     it('disables submit button if connection string is invalid after change', () => {
         render(
@@ -157,16 +166,18 @@ describe('ConnectionCreateForm', () => {
                 onSubmit={vi.fn(async () => undefined)}
             />,
         );
-        const textarea = screen.getByLabelText('Connection string');
-        fireEvent.change(textarea, { target: { value: 'not-a-mongo-uri' } });
-        const submitButton = screen.getByRole('button', { name: 'Save Connection' });
-        expect(submitButton).toBeDisabled();
+
+        fireEvent.change(screen.getByLabelText('Connection string'), {
+            target: { value: 'not-a-mongo-uri' },
+        });
+
+        expect(screen.getByRole('button', { name: 'Save Connection' })).toBeDisabled();
     });
 
     it('shows and toggles password visibility in connection string', () => {
         const password = 'secret123';
         const uri = `mongodb://user:${password}@localhost:27017`;
-        const onConnectionStringChange = vi.fn();
+
         render(
             <ConnectionCreateForm
                 name=""
@@ -175,18 +186,17 @@ describe('ConnectionCreateForm', () => {
                 saving={false}
                 error={null}
                 onNameChange={vi.fn()}
-                onConnectionStringChange={onConnectionStringChange}
+                onConnectionStringChange={vi.fn()}
                 onTlsCertificatePathChange={vi.fn()}
                 onPickTlsCertificate={vi.fn(async () => undefined)}
                 onSubmit={vi.fn(async () => undefined)}
             />,
         );
-        // Should show the toggle button
-        const toggleBtn = screen.getByRole('button', { name: /Show Password/i });
+
+        const toggleBtn = screen.getByRole('button', { name: /show password/i });
         expect(toggleBtn).toBeInTheDocument();
-        // Should mask password by default
         expect(screen.getByDisplayValue(/\*+/)).toBeInTheDocument();
-        // Toggle to show password
+
         fireEvent.click(toggleBtn);
         expect(screen.getByDisplayValue(uri)).toBeInTheDocument();
     });
@@ -235,7 +245,25 @@ describe('ConnectionCreateForm', () => {
             />,
         );
 
-        const submitButton = screen.getByRole('button', { name: 'Saving...' });
-        expect(submitButton).toBeDisabled();
+        expect(screen.getByRole('button', { name: 'Saving...' })).toBeDisabled();
+    });
+
+    it('associates the save button with the form', () => {
+        render(
+            <ConnectionCreateForm
+                name="Prod"
+                connectionString="mongodb://localhost:27017"
+                tlsCertificatePath=""
+                saving={false}
+                error={null}
+                onNameChange={vi.fn()}
+                onConnectionStringChange={vi.fn()}
+                onTlsCertificatePathChange={vi.fn()}
+                onPickTlsCertificate={vi.fn(async () => undefined)}
+                onSubmit={vi.fn(async () => undefined)}
+            />,
+        );
+
+        expect(screen.getByRole('button', { name: 'Save Connection' })).toHaveAttribute('form', 'connection-create-form');
     });
 });

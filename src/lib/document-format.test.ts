@@ -6,7 +6,7 @@ import {
     formatEjsonScalar,
     getRecordId,
     isObjectLike,
-} from '@/lib/document-format';
+} from './document-format';
 
 describe('document-format', () => {
     it('detects object-like values correctly', () => {

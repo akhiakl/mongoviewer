@@ -7,7 +7,6 @@ export type ConnectionListItem = {
 
 export type ConnectionsState = {
   connections: ConnectionListItem[];
-  activeConnectionId: string | null;
 };
 
 export type SaveConnectionInput = {
@@ -27,6 +26,7 @@ export type Selection = {
 };
 
 export type DocumentsQuery = Selection & {
+  connectionId: string;
   page?: number;
   pageSize?: number;
   mongoQuery?: string;

@@ -4,7 +4,7 @@ import type { DocumentsResponse, Selection, SortDirection } from '@/renderer/com
 import { mongoViewer } from '@/renderer/renderer-api';
 
 type UseCollectionDocumentsArgs = {
-  activeConnectionId: string | null;
+  connectionId: string;
   selection: Selection | null;
   page: number;
   pageSize: number;
@@ -14,7 +14,7 @@ type UseCollectionDocumentsArgs = {
 };
 
 export function useCollectionDocuments({
-  activeConnectionId,
+  connectionId,
   selection,
   page,
   pageSize,
@@ -27,7 +27,7 @@ export function useCollectionDocuments({
   const [docsError, setDocsError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!activeConnectionId || !selection) {
+    if (!selection) {
       setResponse(null);
       setDocsError(null);
       setLoadingDocs(false);
@@ -42,6 +42,7 @@ export function useCollectionDocuments({
 
       try {
         const result = await mongoViewer.listDocuments({
+          connectionId,
           db: selection.db,
           collection: selection.collection,
           page,
@@ -71,7 +72,7 @@ export function useCollectionDocuments({
     return () => {
       cancelled = true;
     };
-  }, [activeConnectionId, mongoQuery, page, pageSize, selection, sortDirection, sortField]);
+  }, [connectionId, mongoQuery, page, pageSize, selection, sortDirection, sortField]);
 
   return {
     records: response?.records ?? [],

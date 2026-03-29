@@ -17,7 +17,7 @@ import { validateMongoQuery } from "@/lib/query-validation"
 import { useDebouncedValue } from "@/renderer/hooks/use-debounced-value"
 
 type MongoViewerClientProps = {
-    activeConnectionId: string | null
+    connectionId: string
     activeConnectionName: string | null
     onBack?: () => void
 }
@@ -43,7 +43,7 @@ function pickSelection(tree: DatabaseTreeItem[], current: Selection | null) {
     return null
 }
 
-export function MongoViewerClient({ activeConnectionId, activeConnectionName, onBack }: MongoViewerClientProps) {
+export function MongoViewerClient({ connectionId, activeConnectionName, onBack }: MongoViewerClientProps) {
     const [selection, setSelection] = useState<Selection | null>(null)
     const [page, setPage] = useState(1)
     const [pageSize, setPageSize] = useState(50)
@@ -57,9 +57,9 @@ export function MongoViewerClient({ activeConnectionId, activeConnectionName, on
 
     const { presets, deletePreset, getPresetByName, savePreset } = useQueryPresets(selection)
 
-    const { tree, loadingTree, treeError, refreshTree } = useDatabasesTree(activeConnectionId)
+    const { tree, loadingTree, treeError, refreshTree } = useDatabasesTree(connectionId)
     const { records, total, loadingDocs, docsError } = useCollectionDocuments({
-        activeConnectionId,
+        connectionId,
         selection,
         page,
         pageSize,
@@ -67,7 +67,7 @@ export function MongoViewerClient({ activeConnectionId, activeConnectionName, on
         sortDirection,
         sortField,
     })
-    const { indexes, insightsError, loadingInsights, schemaSummary, stats } = useCollectionInsights(activeConnectionId, selection)
+    const { indexes, insightsError, loadingInsights, schemaSummary, stats } = useCollectionInsights(connectionId, selection)
 
     const debouncedQuickFilter = useDebouncedValue(quickFilter, 220)
 
@@ -99,7 +99,6 @@ export function MongoViewerClient({ activeConnectionId, activeConnectionName, on
 
     const totalPages = Math.max(1, Math.ceil(total / pageSize))
     const error = docsError ?? treeError ?? insightsError
-    const showEmptyConnectionState = !activeConnectionId
     const queryValidationError = useMemo(() => validateMongoQuery(queryDraft), [queryDraft])
     const hasQuickFilter = debouncedQuickFilter.trim().length > 0
     const hasActiveMongoQuery = appliedMongoQuery.trim().length > 0
@@ -201,50 +200,42 @@ export function MongoViewerClient({ activeConnectionId, activeConnectionName, on
                         </Alert>
                     ) : null}
 
-                    {showEmptyConnectionState ? (
-                        <div className="flex min-h-80 items-center justify-center px-4 py-4 text-sm text-muted-foreground md:px-6">
-                            Save or activate a connection to start browsing.
-                        </div>
-                    ) : (
-                        <ViewerContent
-                            hasActiveMongoQuery={hasActiveMongoQuery}
-                            hasQuickFilter={hasQuickFilter}
-                            filteredRecords={filteredRecords}
-                            loadingDocs={loadingDocs}
-                            noResultsMessage={noResultsMessage}
-                            onClearQuickFilter={() => setQuickFilter("")}
-                            onResetQuery={handleResetQuery}
-                            onSortDirectionChange={(direction) => {
-                                setSortDirection(direction)
-                                setPage(1)
-                            }}
-                            onSortFieldChange={(field) => {
-                                setSortField(field)
-                                setPage(1)
-                            }}
-                            onViewModeChange={setViewMode}
-                            queryFieldNames={queryFieldNames}
-                            selection={selection}
-                            sortDirection={sortDirection}
-                            sortField={sortField}
-                            viewMode={viewMode}
-                        />
-                    )}
-                    {!showEmptyConnectionState ? (
-                        <ViewerFooter
-                            loadingDocs={loadingDocs}
-                            onPageChange={setPage}
-                            onPageSizeChange={(nextPageSize) => {
-                                setPageSize(nextPageSize)
-                                setPage(1)
-                            }}
-                            page={page}
-                            pageSize={pageSize}
-                            selection={selection}
-                            total={total}
-                            totalPages={totalPages}
-                        />
-                    ) : null}
+                    <ViewerContent
+                        hasActiveMongoQuery={hasActiveMongoQuery}
+                        hasQuickFilter={hasQuickFilter}
+                        filteredRecords={filteredRecords}
+                        loadingDocs={loadingDocs}
+                        noResultsMessage={noResultsMessage}
+                        onClearQuickFilter={() => setQuickFilter("")}
+                        onResetQuery={handleResetQuery}
+                        onSortDirectionChange={(direction) => {
+                            setSortDirection(direction)
+                            setPage(1)
+                        }}
+                        onSortFieldChange={(field) => {
+                            setSortField(field)
+                            setPage(1)
+                        }}
+                        onViewModeChange={setViewMode}
+                        queryFieldNames={queryFieldNames}
+                        selection={selection}
+                        sortDirection={sortDirection}
+                        sortField={sortField}
+                        viewMode={viewMode}
+                    />
+                    <ViewerFooter
+                        loadingDocs={loadingDocs}
+                        onPageChange={setPage}
+                        onPageSizeChange={(nextPageSize) => {
+                            setPageSize(nextPageSize)
+                            setPage(1)
+                        }}
+                        page={page}
+                        pageSize={pageSize}
+                        selection={selection}
+                        total={total}
+                        totalPages={totalPages}
+                    />
                 </div>
             </SidebarProvider>
         </section>

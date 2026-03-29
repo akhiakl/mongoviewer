@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import { validateMongoQuery } from "@/lib/query-validation"
+import { validateMongoQuery } from "./query-validation"
 
 describe("validateMongoQuery", () => {
     it("accepts empty queries", () => {

@@ -5,7 +5,6 @@ export type ConnectionHomeProps = {
     loadingConnections: boolean;
     connectionError: string | null;
     onSaveConnection: (input: SaveConnectionInput) => Promise<void>;
-    onActivateConnection: (connectionId: string) => Promise<void>;
     onDeleteConnection: (connectionId: string) => Promise<void>;
     onPickTlsCertificate: () => Promise<string | null>;
 };

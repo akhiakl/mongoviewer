@@ -1,114 +1,72 @@
-import { Badge } from '@/renderer/components/ui/badge';
-import { Button } from '@/renderer/components/ui/button';
-import { ButtonGroup } from '@/renderer/components/ui/button-group';
-import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from '@/renderer/components/ui/card';
-import type { ConnectionsState } from '@/shared/mongo-types';
-import { Trash2 } from 'lucide-react';
+import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/renderer/components/ui/empty';
+import type { ConnectionListItem, ConnectionsState } from '@/shared/mongo-types';
+import ConnectionCard from './connection-card';
+import { Link2 } from 'lucide-react';
 
 type SavedConnectionsListProps = {
     connectionsState: ConnectionsState;
     loadingConnections: boolean;
-    connectingId: string | null;
-    deletingId: string | null;
-    onConnect: (connectionId: string) => Promise<void>;
-    onDelete: (connectionId: string) => Promise<void>;
+    copiedId: string | null;
+    onCopy: (connString: string, id: string) => void;
+    onEdit: (connection: ConnectionListItem) => void;
+    onDelete: (id: string, name: string) => void;
 };
-
-const getConnectionDetails = (uri: string) => {
-    try {
-        const url = new URL(uri);
-        return `${url.hostname}:${url.port}`;
-    } catch {
-        return 'Invalid URI';
-    }
-};
-
-const timeAgo = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const secondsAgo = Math.floor((now.getTime() - date.getTime()) / 1000);
-
-    if (secondsAgo < 60) {
-        return `${secondsAgo} seconds ago`;
-    } else if (secondsAgo < 3600) {
-        const minutes = Math.floor(secondsAgo / 60);
-        return `${minutes} minute${minutes !== 1 ? 's' : ''} ago`;
-    } else if (secondsAgo < 86400) {
-        const hours = Math.floor(secondsAgo / 3600);
-        return `${hours} hour${hours !== 1 ? 's' : ''} ago`;
-    } else {
-        const days = Math.floor(secondsAgo / 86400);
-        return `${days} day${days !== 1 ? 's' : ''} ago`;
-    }
-}
 
 export function SavedConnectionsList({
     connectionsState,
     loadingConnections,
-    connectingId,
-    deletingId,
-    onConnect,
+    copiedId,
+    onCopy,
+    onEdit,
     onDelete,
 }: SavedConnectionsListProps) {
-    const { connections, activeConnectionId } = connectionsState;
+    const { connections } = connectionsState;
 
     return (
-        <Card className="flex h-full min-h-0 w-full flex-col">
-            <CardHeader className="pb-4">
-                <CardTitle>Saved Connections</CardTitle>
-            </CardHeader>
-            <CardContent className="min-h-0 flex-1 overflow-auto">
-                {loadingConnections ? <p className="text-sm text-muted-foreground">Loading connections...</p> : null}
-
-                {connections.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">No saved connections yet.</p>
-                ) : (
-                    <div className="mt-1 space-y-2 overflow-auto pr-1">
-                        {connections.map((connection) => (
-                            <Card
-                                key={connection.id}
-                                className="rounded-lg border border-border"
-                            >
-                                <CardHeader>
-                                    <CardTitle>{connection.name}</CardTitle>
-                                    <CardDescription>
-                                        <p>{getConnectionDetails(connection.uri)}</p>
-                                        <p className="text-sm">created {timeAgo(connection.createdAt)}</p>
-                                    </CardDescription>
-                                    {activeConnectionId === connection.id ? (
-                                        <Badge variant="secondary" className="mt-1">
-                                            Active
-                                        </Badge>
-                                    ) : null}
-                                    <CardAction>
-                                        <ButtonGroup>
-                                            <Button
-                                                variant="default"
-                                                disabled={connectingId === connection.id}
-                                                onClick={() => {
-                                                    void onConnect(connection.id);
-                                                }}
-                                            >
-                                                {connectingId === connection.id ? 'Connecting...' : activeConnectionId === connection.id ? 'Open' : 'Connect'}
-                                            </Button>
-                                            <Button
-                                                variant="destructive"
-                                                size="icon"
-                                                disabled={deletingId === connection.id}
-                                                onClick={() => {
-                                                    void onDelete(connection.id);
-                                                }}
-                                            >
-                                                <Trash2 className="h-4 w-4" />
-                                            </Button>
-                                        </ButtonGroup>
-                                    </CardAction>
-                                </CardHeader>
-                            </Card>
-                        ))}
+        <div className="flex-1 overflow-y-auto bg-background rounded-ss-[1rem]">
+            <div className="p-6">
+                <div className="space-y-6">
+                    <div>
+                        <h2 className="text-lg font-semibold mb-2">Saved Connections</h2>
+                        {!loadingConnections && (
+                            <p className="text-sm text-muted-foreground">
+                                {connections.length} connection
+                                {connections.length !== 1 ? 's' : ''}
+                            </p>
+                        )}
                     </div>
-                )}
-            </CardContent>
-        </Card>
+                    {/* Connections Grid */}
+                    <div className="space-y-4">
+                        {loadingConnections ? <p className="text-sm text-muted-foreground">Loading connections...</p> : null}
+
+                        {connections.length === 0 ? (
+                            <Empty>
+                                <EmptyHeader>
+                                    <EmptyMedia variant="icon">
+                                        <Link2 />
+                                    </EmptyMedia>
+                                    <EmptyTitle>No connections yet</EmptyTitle>
+                                    <EmptyDescription>Create your first MongoDB connection to get started</EmptyDescription>
+                                </EmptyHeader>
+
+                            </Empty>
+                        ) : (
+                            <div className="mt-1 space-y-2 overflow-auto pr-1">
+                                {connections.map((connection) => (
+                                    <ConnectionCard
+                                        key={connection.id}
+                                        connection={connection}
+                                        isCopied={copiedId === connection.id}
+                                        onCopy={onCopy}
+                                        onEdit={onEdit}
+                                        onDelete={onDelete}
+                                    />
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </div>
+        </div>
     );
 }

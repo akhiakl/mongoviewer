@@ -56,12 +56,12 @@ describe("useCollectionInsights", () => {
         resetCollectionInsightsCache()
     })
 
-    it("loads insights for the active selection", async () => {
+    it("loads insights for the selected connection", async () => {
         const { result } = renderHook(
-            ({ activeConnectionId, selection }) => useCollectionInsights(activeConnectionId, selection),
+            ({ connectionId, selection }) => useCollectionInsights(connectionId, selection),
             {
                 initialProps: {
-                    activeConnectionId: "conn-1" as string | null,
+                    connectionId: "conn-1",
                     selection: { db: "app", collection: "users" },
                 },
             },
@@ -76,18 +76,18 @@ describe("useCollectionInsights", () => {
         expect(result.current.stats?.documentCount).toBe(12)
         expect(result.current.indexes).toHaveLength(1)
         expect(result.current.schemaSummary?.sampleSize).toBe(12)
-        expect(getCollectionStatsMock).toHaveBeenCalledTimes(1)
-        expect(getCollectionIndexesMock).toHaveBeenCalledTimes(1)
-        expect(getCollectionSchemaSummaryMock).toHaveBeenCalledTimes(1)
+        expect(getCollectionStatsMock).toHaveBeenCalledWith({ connectionId: "conn-1", db: "app", collection: "users" })
+        expect(getCollectionIndexesMock).toHaveBeenCalledWith({ connectionId: "conn-1", db: "app", collection: "users" })
+        expect(getCollectionSchemaSummaryMock).toHaveBeenCalledWith({ connectionId: "conn-1", db: "app", collection: "users" })
     })
 
     it("reuses cached insights for the same selection", async () => {
         const props = {
-            activeConnectionId: "conn-1" as string | null,
+            connectionId: "conn-1",
             selection: { db: "app", collection: "users" },
         }
         const initial = renderHook(
-            ({ activeConnectionId, selection }) => useCollectionInsights(activeConnectionId, selection),
+            ({ connectionId, selection }) => useCollectionInsights(connectionId, selection),
             {
                 initialProps: props,
             },
@@ -101,7 +101,7 @@ describe("useCollectionInsights", () => {
         vi.clearAllMocks()
 
         const cached = renderHook(
-            ({ activeConnectionId, selection }) => useCollectionInsights(activeConnectionId, selection),
+            ({ connectionId, selection }) => useCollectionInsights(connectionId, selection),
             {
                 initialProps: props,
             },
@@ -118,10 +118,10 @@ describe("useCollectionInsights", () => {
         getCollectionStatsMock.mockRejectedValueOnce(new Error("Stats failed"))
 
         const { result } = renderHook(
-            ({ activeConnectionId, selection }) => useCollectionInsights(activeConnectionId, selection),
+            ({ connectionId, selection }) => useCollectionInsights(connectionId, selection),
             {
                 initialProps: {
-                    activeConnectionId: "conn-1" as string | null,
+                    connectionId: "conn-1",
                     selection: { db: "app", collection: "users" },
                 },
             },
@@ -139,10 +139,10 @@ describe("useCollectionInsights", () => {
 
     it("resets cleanly when there is no active selection", async () => {
         const { result } = renderHook(
-            ({ activeConnectionId, selection }) => useCollectionInsights(activeConnectionId, selection),
+            ({ connectionId, selection }) => useCollectionInsights(connectionId, selection),
             {
                 initialProps: {
-                    activeConnectionId: null as string | null,
+                    connectionId: "conn-1",
                     selection: null as { db: string; collection: string } | null,
                 },
             },

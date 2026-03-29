@@ -5,12 +5,12 @@ import { Button } from '@/renderer/components/ui/button';
 import { Input } from '@/renderer/components/ui/input';
 import { Label } from '@/renderer/components/ui/label';
 import { Textarea } from '@/renderer/components/ui/textarea';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/renderer/components/ui/card';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/renderer/components/ui/card';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/renderer/components/ui/tooltip';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/renderer/components/ui/collapsible';
 import React, { useState } from 'react';
 import { TlsCertificateSection } from './tls-certificate-section';
 import QueryParamsSection, { COMMON_QUERY_PARAMS } from './query-params-secton';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../ui/collapsible';
 import { ChevronDownIcon } from 'lucide-react';
 
 
@@ -41,6 +41,7 @@ export function ConnectionCreateForm({
     onPickTlsCertificate,
     onSubmit,
 }: ConnectionCreateFormProps) {
+    const formId = 'connection-create-form';
     const [showPassword, setShowPassword] = useState(false);
     const [connectionStringError, setConnectionStringError] = useState<string | null>(null);
     const [displayedConnectionString, setDisplayedConnectionString] = useState(connectionString);
@@ -170,15 +171,16 @@ export function ConnectionCreateForm({
 
     return (
         <TooltipProvider>
-            <Card className="flex h-full min-h-0 w-full flex-col overflow-y-auto">
+            <Card className="flex h-full min-h-0 w-full ring-0">
                 <CardHeader className="pb-4">
                     <CardTitle>Create New Connection</CardTitle>
                     <CardDescription>
                         Save connections and inspect live MongoDB collections.
                     </CardDescription>
                 </CardHeader>
-                <CardContent className="flex-1">
+                <CardContent className="flex-1 overflow-y-auto">
                     <form
+                        id={formId}
                         onSubmit={(event) => {
                             void onSubmit(event);
                         }}
@@ -269,20 +271,19 @@ export function ConnectionCreateForm({
                                 />
                             )}
                         </div>
-
-                        {error ? (
-                            <Alert variant="destructive">
-                                <AlertDescription>{error}</AlertDescription>
-                            </Alert>
-                        ) : null}
-
-                        <div className="mt-auto flex items-center justify-end">
-                            <Button type="submit" disabled={saving || !!connectionStringError}>
-                                {saving ? 'Saving...' : 'Save Connection'}
-                            </Button>
-                        </div>
                     </form>
                 </CardContent>
+                <CardFooter className="flex-col gap-2">
+                    {error ? (
+                        <Alert variant="destructive" className="w-full">
+                            <AlertDescription>{error}</AlertDescription>
+                        </Alert>
+                    ) : null}
+
+                    <Button form={formId} type="submit" disabled={saving || !!connectionStringError} className="w-full">
+                        {saving ? 'Saving...' : 'Save Connection'}
+                    </Button>
+                </CardFooter>
             </Card>
         </TooltipProvider>
     );

@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from "vitest"
 
 import { ViewerContent } from "@/renderer/components/mongo-viewer/viewer-content"
 
-vi.mock("@/components/mongo-viewer/viewer-toolbar", () => ({
+vi.mock("@/renderer/components/mongo-viewer/viewer-toolbar", () => ({
     ViewerToolbar: ({
         onViewModeChange,
     }: {
@@ -17,13 +17,13 @@ vi.mock("@/components/mongo-viewer/viewer-toolbar", () => ({
     ),
 }))
 
-vi.mock("@/components/mongo-viewer/records-table", () => ({
+vi.mock("@/renderer/components/mongo-viewer/records-table", () => ({
     RecordsTable: ({ records }: { records: Array<Record<string, unknown>> }) => (
         <div>Table Count:{records.length}</div>
     ),
 }))
 
-vi.mock("@/components/mongo-viewer/records-json-list", () => ({
+vi.mock("@/renderer/components/mongo-viewer/records-json-list", () => ({
     RecordsJsonList: ({ records }: { records: Array<Record<string, unknown>> }) => (
         <div>Json Count:{records.length}</div>
     ),

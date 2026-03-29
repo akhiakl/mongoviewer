@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { buildMongoConnectionString } from '@/lib/mongo-connection';
+import { buildMongoConnectionString } from '@/core/mongo-connection';
 
 describe('buildMongoConnectionString', () => {
     it('throws when connection string is empty', () => {

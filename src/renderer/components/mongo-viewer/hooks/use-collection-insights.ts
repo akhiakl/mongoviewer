@@ -17,15 +17,15 @@ type CachedInsights = CollectionInsights & {
 
 const insightsCache = new Map<string, CachedInsights>();
 
-function getInsightsCacheKey(activeConnectionId: string, selection: Selection) {
-  return `${activeConnectionId}:${selection.db}:${selection.collection}`;
+function getInsightsCacheKey(connectionId: string, selection: Selection) {
+  return `${connectionId}:${selection.db}:${selection.collection}`;
 }
 
 export function resetCollectionInsightsCache() {
   insightsCache.clear();
 }
 
-export function useCollectionInsights(activeConnectionId: string | null, selection: Selection | null) {
+export function useCollectionInsights(connectionId: string, selection: Selection | null) {
   const [insights, setInsights] = useState<CollectionInsights>({
     indexes: [],
     schemaSummary: null,
@@ -35,7 +35,7 @@ export function useCollectionInsights(activeConnectionId: string | null, selecti
   const [insightsError, setInsightsError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!activeConnectionId || !selection) {
+    if (!selection) {
       setInsights({ indexes: [], schemaSummary: null, stats: null });
       setLoadingInsights(false);
       setInsightsError(null);
@@ -43,7 +43,7 @@ export function useCollectionInsights(activeConnectionId: string | null, selecti
     }
 
     let cancelled = false;
-    const cacheKey = getInsightsCacheKey(activeConnectionId, selection);
+    const cacheKey = getInsightsCacheKey(connectionId, selection);
     const cachedInsights = insightsCache.get(cacheKey);
 
     if (cachedInsights && Date.now() - cachedInsights.cachedAt < INSIGHTS_CACHE_TTL_MS) {
@@ -62,10 +62,10 @@ export function useCollectionInsights(activeConnectionId: string | null, selecti
       setInsightsError(null);
 
       try {
-        const [stats, indexes, schemaSummary] = await Promise.all([
-          mongoViewer.getCollectionStats(selection),
-          mongoViewer.getCollectionIndexes(selection),
-          mongoViewer.getCollectionSchemaSummary(selection),
+        const [indexes, schemaSummary, stats] = await Promise.all([
+          mongoViewer.getCollectionIndexes({ ...selection, connectionId }),
+          mongoViewer.getCollectionSchemaSummary({ ...selection, connectionId }),
+          mongoViewer.getCollectionStats({ ...selection, connectionId }),
         ]);
 
         if (!cancelled) {
@@ -94,7 +94,7 @@ export function useCollectionInsights(activeConnectionId: string | null, selecti
     return () => {
       cancelled = true;
     };
-  }, [activeConnectionId, selection]);
+  }, [connectionId, selection]);
 
   return {
     ...insights,

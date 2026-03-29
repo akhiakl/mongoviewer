@@ -10,6 +10,7 @@ export function requireNonEmptyString(value: string | undefined | null, errorMes
 }
 
 export function validateDocumentsQuery(query: DocumentsQuery) {
+    requireNonEmptyString(query?.connectionId, 'Connection is required.');
     requireNonEmptyString(query?.db, 'Database and collection are required.');
     requireNonEmptyString(query?.collection, 'Database and collection are required.');
 

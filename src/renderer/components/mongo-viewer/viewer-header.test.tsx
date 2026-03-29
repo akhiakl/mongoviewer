@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
-vi.mock('@/components/mongo-viewer/query-editor', () => ({
+vi.mock('@/renderer/components/mongo-viewer/query-editor', () => ({
   QueryEditor: ({
     disabled,
     fieldNames,

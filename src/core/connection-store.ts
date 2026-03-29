@@ -11,12 +11,10 @@ type StoredConnection = ConnectionListItem & {
 };
 
 type ConnectionStore = {
-    activeConnectionId: string | null;
     connections: StoredConnection[];
 };
 
 const EMPTY_STORE: ConnectionStore = {
-    activeConnectionId: null,
     connections: [],
 };
 
@@ -36,8 +34,6 @@ async function readStore(): Promise<ConnectionStore> {
         const parsed = JSON.parse(raw) as Partial<ConnectionStore>;
 
         return {
-            activeConnectionId:
-                typeof parsed.activeConnectionId === 'string' ? parsed.activeConnectionId : null,
             connections: Array.isArray(parsed.connections)
                 ? parsed.connections.filter(
                     (connection): connection is StoredConnection =>
@@ -95,10 +91,6 @@ export async function getConnectionsState(): Promise<ConnectionsState> {
 
     return {
         connections,
-        activeConnectionId:
-            connections.some((connection) => connection.id === store.activeConnectionId)
-                ? store.activeConnectionId
-                : null,
     };
 }
 
@@ -129,7 +121,6 @@ export async function createConnection(input: {
         };
 
         store.connections.push(connection);
-        store.activeConnectionId = connection.id;
 
         return toSummary(connection);
     });
@@ -146,48 +137,11 @@ export async function deleteConnection(connectionId: string) {
 
         store.connections = nextConnections;
 
-        if (store.activeConnectionId === connectionId) {
-            store.activeConnectionId = nextConnections[0]?.id ?? null;
-        }
-
         await removeTlsCertificate(target.tlsCertificatePath);
-
-        return {
-            activeConnectionId: store.activeConnectionId,
-        };
     });
 }
 
-export async function setActiveConnection(connectionId: string) {
-    return mutateStore((store) => {
-        const target = store.connections.find((connection) => connection.id === connectionId);
-        if (!target) {
-            throw new Error('Connection not found.');
-        }
-
-        store.activeConnectionId = connectionId;
-
-        return toSummary(target);
-    });
-}
-
-export async function clearActiveConnection() {
-    return mutateStore((store) => {
-        store.activeConnectionId = null;
-
-        return {
-            activeConnectionId: null as string | null,
-        };
-    });
-}
-
-export async function getActiveConnection() {
+export async function getConnection(connectionId: string) {
     const store = await readStore();
-
-    const active = store.connections.find((connection) => connection.id === store.activeConnectionId);
-    if (active) {
-        return active;
-    }
-
-    return null;
+    return store.connections.find((connection) => connection.id === connectionId) ?? null;
 }

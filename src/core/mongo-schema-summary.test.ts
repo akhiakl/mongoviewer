@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { summarizeCollectionSchema } from '@/lib/main/mongo-schema-summary';
+import { summarizeCollectionSchema } from '@/core/mongo-schema-summary';
 
 describe('summarizeCollectionSchema', () => {
   it('builds field paths, types, presence rate, and compact examples', () => {

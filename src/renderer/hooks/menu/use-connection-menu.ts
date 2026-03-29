@@ -1,28 +1,27 @@
-import { useAppView } from '@/renderer/components/app-view'
 import { useConnections } from '@/renderer/hooks/use-connections';
 import { useCallback } from 'react';
+import { useNavigate } from 'react-router';
+
 export function useConnectionMenu() {
     const {
         connectionsState,
         saveConnection,
-        activateConnection,
-        clearActiveConnection,
         removeConnection,
         refreshConnections,
     } = useConnections();
-    const { setView } = useAppView();
+    const navigate = useNavigate();
 
     const openConnection = useCallback(() => {
-        setView('connections');
-    }, [setView]);
+        navigate('/');
+    }, [navigate]);
 
     const saveCurrentConnection = useCallback(() => {
         alert('Save current connection (not yet implemented)');
     }, []);
 
     const openSavedConnection = useCallback(() => {
-        setView('connections');
-    }, [setView]);
+        navigate('/');
+    }, [navigate]);
 
     const renameConnection = useCallback(() => {
         alert('Rename connection (not yet implemented)');
@@ -40,8 +39,6 @@ export function useConnectionMenu() {
         deleteConnection,
         connectionsState,
         saveConnection,
-        activateConnection,
-        clearActiveConnection,
         removeConnection,
         refreshConnections,
     };

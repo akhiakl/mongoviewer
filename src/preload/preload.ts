@@ -17,14 +17,8 @@ export const api = {
     deleteConnection: (connectionId: string) =>
         invoke('mongo:delete-connection', connectionId),
 
-    setActiveConnection: (connectionId: string) =>
-        invoke('mongo:set-active-connection', connectionId),
-
-    clearActiveConnection: () =>
-        invoke('mongo:clear-active-connection'),
-
-    listDatabaseTree: () =>
-        invoke('mongo:list-database-tree'),
+    listDatabaseTree: (connectionId: string) =>
+        invoke('mongo:list-database-tree', connectionId),
 
     listDocuments: (query: DocumentsQuery) =>
         invoke('mongo:list-documents', query),

@@ -13,7 +13,8 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       exclude: [
-        'src/components/ui/**',
+        //shadcn generated files
+        'src/renderer/components/ui/**',
       ],
       thresholds: {
         perFile: false,
