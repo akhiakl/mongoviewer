@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 
 import type { DocumentsResponse, Selection, SortDirection } from '@/renderer/components/mongo-viewer/types';
-import { mongoViewer } from '@/renderer/renderer-api';
+import { mongoViewerService } from '@/renderer/services/mongo-viewer-service';
 
 type UseCollectionDocumentsArgs = {
   connectionId: string;
@@ -41,7 +41,7 @@ export function useCollectionDocuments({
       setDocsError(null);
 
       try {
-        const result = await mongoViewer.listDocuments({
+        const result = await mongoViewerService.listDocuments({
           connectionId,
           db: selection.db,
           collection: selection.collection,

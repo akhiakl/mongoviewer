@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 
 import type { CollectionIndexSummary, CollectionSchemaSummary, CollectionStats, Selection } from '@/renderer/components/mongo-viewer/types';
-import { mongoViewer } from '@/renderer/renderer-api';
+import { mongoViewerService } from '@/renderer/services/mongo-viewer-service';
 
 const INSIGHTS_CACHE_TTL_MS = 60_000;
 
@@ -63,9 +63,9 @@ export function useCollectionInsights(connectionId: string, selection: Selection
 
       try {
         const [indexes, schemaSummary, stats] = await Promise.all([
-          mongoViewer.getCollectionIndexes({ ...selection, connectionId }),
-          mongoViewer.getCollectionSchemaSummary({ ...selection, connectionId }),
-          mongoViewer.getCollectionStats({ ...selection, connectionId }),
+          mongoViewerService.getCollectionIndexes({ ...selection, connectionId }),
+          mongoViewerService.getCollectionSchemaSummary({ ...selection, connectionId }),
+          mongoViewerService.getCollectionStats({ ...selection, connectionId }),
         ]);
 
         if (!cancelled) {

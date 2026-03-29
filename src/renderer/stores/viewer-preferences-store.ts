@@ -9,7 +9,6 @@ export type ViewerPreferences = {
     viewMode: ViewMode;
     lastSelection: Selection | null;
     showInsights: boolean;
-    sidebarOpen: boolean;
 };
 
 type ViewerPreferencesStoreState = {
@@ -25,7 +24,6 @@ export const DEFAULT_VIEWER_PREFERENCES: ViewerPreferences = {
     viewMode: 'table',
     lastSelection: null,
     showInsights: false,
-    sidebarOpen: true,
 };
 
 function shallowEqualPreferences(left: ViewerPreferences, right: ViewerPreferences) {
@@ -33,7 +31,6 @@ function shallowEqualPreferences(left: ViewerPreferences, right: ViewerPreferenc
         left.pageSize === right.pageSize &&
         left.viewMode === right.viewMode &&
         left.showInsights === right.showInsights &&
-        left.sidebarOpen === right.sidebarOpen &&
         left.lastSelection?.db === right.lastSelection?.db &&
         left.lastSelection?.collection === right.lastSelection?.collection
     );

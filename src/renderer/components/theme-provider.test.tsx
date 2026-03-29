@@ -60,7 +60,6 @@ describe('ThemeProvider', () => {
         window.localStorage.clear();
         useAppUiStore.setState({
             themePreference: 'system',
-            sidebarOpen: true,
             queryHistoryOpen: false,
             schemaPanelOpen: false,
         });

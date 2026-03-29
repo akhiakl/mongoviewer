@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 
 import type { DatabaseTreeItem } from '@/renderer/components/mongo-viewer/types';
-import { mongoViewer } from '@/renderer/renderer-api';
+import { mongoViewerService } from '@/renderer/services/mongo-viewer-service';
 
 export function useDatabasesTree(connectionId: string) {
     const [tree, setTree] = useState<DatabaseTreeItem[]>([]);
@@ -17,7 +17,7 @@ export function useDatabasesTree(connectionId: string) {
         setTreeError(null);
 
         try {
-            const nextTree = await mongoViewer.listDatabaseTree(connectionId);
+            const nextTree = await mongoViewerService.listDatabaseTree(connectionId);
             setTree(nextTree);
         } catch (error) {
             setTree([]);

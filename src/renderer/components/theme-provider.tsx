@@ -1,12 +1,12 @@
 import React from 'react';
 
-import { mongoViewer } from '@/renderer/renderer-api';
 import {
     getStoredThemePreference,
     selectThemePreference,
     type ThemePreference,
     useAppUiStore,
 } from '@/renderer/stores/app-ui-store';
+import { mongoViewerService } from '@/renderer/services/mongo-viewer-service';
 
 export type ResolvedTheme = 'light' | 'dark';
 
@@ -65,7 +65,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     }, [resolvedTheme]);
 
     React.useEffect(() => {
-        void mongoViewer.setThemePreference(theme);
+        void mongoViewerService.setThemePreference(theme);
     }, [theme]);
 
     const value = React.useMemo(

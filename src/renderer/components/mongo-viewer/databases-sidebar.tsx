@@ -48,7 +48,7 @@ export function DatabasesSidebar({
             .filter(Boolean) as typeof tree;
     }, [tree, search]);
     return (
-        <Sidebar collapsible="offcanvas" className="w-64 shrink-0 min-h-full">
+        <Sidebar collapsible="none" className="w-64 shrink-0 min-h-full">
             <SidebarHeader className="flex flex-col gap-2">
                 <div className="flex flex-row justify-between items-center">
                     <h2 className="text-sm font-semibold uppercase tracking-[0.16em] text-muted-foreground">Databases</h2>

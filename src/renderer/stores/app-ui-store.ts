@@ -5,12 +5,9 @@ export type ThemePreference = 'system' | 'light' | 'dark';
 
 export type AppUiState = {
     themePreference: ThemePreference;
-    sidebarOpen: boolean;
     queryHistoryOpen: boolean;
     schemaPanelOpen: boolean;
     setThemePreference: (themePreference: ThemePreference) => void;
-    setSidebarOpen: (open: boolean) => void;
-    toggleSidebar: () => void;
     setQueryHistoryOpen: (open: boolean) => void;
     toggleQueryHistory: () => void;
     setSchemaPanelOpen: (open: boolean) => void;
@@ -22,7 +19,6 @@ export const APP_UI_STORAGE_KEY = 'mongoviewer-app-ui';
 function getDefaultState() {
     return {
         themePreference: 'system' as ThemePreference,
-        sidebarOpen: true,
         queryHistoryOpen: false,
         schemaPanelOpen: false,
     };
@@ -63,8 +59,6 @@ export const useAppUiStore = create<AppUiState>()(
         (set) => ({
             ...getDefaultState(),
             setThemePreference: (themePreference) => set({ themePreference }),
-            setSidebarOpen: (sidebarOpen) => set({ sidebarOpen }),
-            toggleSidebar: () => set((state) => ({ sidebarOpen: !state.sidebarOpen })),
             setQueryHistoryOpen: (queryHistoryOpen) => set({ queryHistoryOpen }),
             toggleQueryHistory: () =>
                 set((state) => ({ queryHistoryOpen: !state.queryHistoryOpen })),
@@ -83,6 +77,5 @@ export const useAppUiStore = create<AppUiState>()(
 );
 
 export const selectThemePreference = (state: AppUiState) => state.themePreference;
-export const selectSidebarOpen = (state: AppUiState) => state.sidebarOpen;
 export const selectQueryHistoryOpen = (state: AppUiState) => state.queryHistoryOpen;
 export const selectSchemaPanelOpen = (state: AppUiState) => state.schemaPanelOpen;

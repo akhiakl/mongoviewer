@@ -5,7 +5,6 @@ import type { Selection, ViewMode } from '@/renderer/components/mongo-viewer/typ
 import {
     selectQueryHistoryOpen,
     selectSchemaPanelOpen,
-    selectSidebarOpen,
     useAppUiStore,
 } from '@/renderer/stores/app-ui-store';
 import {
@@ -19,29 +18,18 @@ export function useViewerPreferences(connectionId: string) {
     );
     const setStoredPreferences = useViewerPreferencesStore((state) => state.setPreferences);
 
-    const sidebarOpen = useAppUiStore(selectSidebarOpen);
     const schemaPanelOpen = useAppUiStore(selectSchemaPanelOpen);
     const queryHistoryOpen = useAppUiStore(selectQueryHistoryOpen);
-    const setSidebarOpen = useAppUiStore((state) => state.setSidebarOpen);
     const setSchemaPanelOpen = useAppUiStore((state) => state.setSchemaPanelOpen);
 
     useEffect(() => {
-        setSidebarOpen(preferences.sidebarOpen);
         setSchemaPanelOpen(preferences.showInsights);
-    }, [connectionId, preferences.showInsights, preferences.sidebarOpen, setSchemaPanelOpen, setSidebarOpen]);
-
-    useEffect(() => {
-        setStoredPreferences(connectionId, {
-            sidebarOpen,
-            showInsights: schemaPanelOpen,
-        });
-    }, [connectionId, schemaPanelOpen, setStoredPreferences, sidebarOpen]);
+    }, [connectionId, preferences.showInsights, setSchemaPanelOpen]);
 
     return {
         pageSize: preferences.pageSize,
         viewMode: preferences.viewMode,
         lastSelection: preferences.lastSelection,
-        sidebarOpen,
         showInsights: schemaPanelOpen,
         queryHistoryOpen,
         setPageSize: (pageSize: number) => {
@@ -53,7 +41,9 @@ export function useViewerPreferences(connectionId: string) {
         setLastSelection: (lastSelection: Selection | null) => {
             setStoredPreferences(connectionId, { lastSelection });
         },
-        setSidebarOpen,
-        setShowInsights: setSchemaPanelOpen,
+        setShowInsights: (showInsights: boolean) => {
+            setSchemaPanelOpen(showInsights);
+            setStoredPreferences(connectionId, { showInsights });
+        },
     };
 }

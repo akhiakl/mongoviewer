@@ -3,11 +3,11 @@ import { describe, expect, it, vi } from 'vitest';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import { useConnectionsStore } from '@/renderer/stores/connections-store';
 
-const useConnectionsMock = vi.fn();
+const useConnectionsControllerMock = vi.fn();
 const navigateMock = vi.fn();
 
-vi.mock('@/renderer/hooks/use-connections', () => ({
-    useConnections: () => useConnectionsMock(),
+vi.mock('@/renderer/features/connections/hooks/use-connections-controller', () => ({
+    useConnectionsController: () => useConnectionsControllerMock(),
 }));
 
 vi.mock('@/renderer/components/mongo-viewer', () => ({
@@ -47,7 +47,7 @@ describe('ConnectionPage', () => {
             error: null,
             hasLoaded: true,
         });
-        useConnectionsMock.mockReturnValue({
+        useConnectionsControllerMock.mockReturnValue({
             connectionError: null,
             connectionsState: {
                 connections: [
@@ -78,7 +78,7 @@ describe('ConnectionPage', () => {
             error: null,
             hasLoaded: true,
         });
-        useConnectionsMock.mockReturnValue({
+        useConnectionsControllerMock.mockReturnValue({
             connectionError: null,
             connectionsState: { connections: [] },
             loadingConnections: false,
@@ -105,7 +105,7 @@ describe('ConnectionPage', () => {
             error: null,
             hasLoaded: true,
         });
-        useConnectionsMock
+        useConnectionsControllerMock
             .mockReturnValueOnce({
                 connectionError: null,
                 connectionsState: { connections: [] },

@@ -113,8 +113,6 @@ export function MongoViewerClient({
                 />
             ) : null}
             <SidebarProvider
-                open={viewerPreferences.sidebarOpen}
-                onOpenChange={viewerPreferences.setSidebarOpen}
                 className="flex min-h-0 flex-1"
             >
                 <DatabasesSidebar
