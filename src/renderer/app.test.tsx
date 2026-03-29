@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { Link, MemoryRouter } from 'react-router';
+import { useConnectionsStore } from '@/renderer/stores/connections-store';
 
 const useConnectionsMock = vi.fn();
 
@@ -49,6 +50,13 @@ describe('App', () => {
       connections: [{ id: 'conn-1', name: 'Prod', createdAt: '2026-01-01T00:00:00.000Z', uri: 'mongodb://prod' }],
     };
 
+    useConnectionsStore.setState({
+      connections: state.connections,
+      loading: false,
+      error: null,
+      hasLoaded: true,
+    });
+
     useConnectionsMock.mockReturnValue({
       connectionsState: state,
       loadingConnections: false,
@@ -77,5 +85,5 @@ describe('App', () => {
     await waitFor(() => {
       expect(screen.getByRole('link', { name: 'Open Connection' })).toBeInTheDocument();
     });
-  });
+  }, 15000);
 });

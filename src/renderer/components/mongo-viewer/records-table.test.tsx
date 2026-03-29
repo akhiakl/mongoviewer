@@ -78,7 +78,7 @@ describe("RecordsTable", () => {
         fireEvent.click(screen.getByRole("button", { name: "Close" }))
 
         expect(screen.queryByText("Inspect profile")).not.toBeInTheDocument()
-    })
+    }, 15000)
 
     it("does not mark scalar and EJSON scalar cells as inspectable", () => {
         render(

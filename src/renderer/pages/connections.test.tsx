@@ -1,6 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { MemoryRouter, Route, Routes } from 'react-router';
+import { useConnectionsStore } from '@/renderer/stores/connections-store';
 
 const useConnectionsMock = vi.fn();
 const navigateMock = vi.fn();
@@ -38,6 +39,14 @@ vi.mock('react-router', async () => {
 
 describe('ConnectionPage', () => {
     it('renders the viewer for the routed connection id', async () => {
+        useConnectionsStore.setState({
+            connections: [
+                { id: 'conn-1', name: 'Prod', createdAt: '2026-01-01T00:00:00.000Z', uri: 'mongodb://prod' },
+            ],
+            loading: false,
+            error: null,
+            hasLoaded: true,
+        });
         useConnectionsMock.mockReturnValue({
             connectionError: null,
             connectionsState: {
@@ -63,6 +72,12 @@ describe('ConnectionPage', () => {
     });
 
     it('shows a missing-connection state when the url does not match saved connections', async () => {
+        useConnectionsStore.setState({
+            connections: [],
+            loading: false,
+            error: null,
+            hasLoaded: true,
+        });
         useConnectionsMock.mockReturnValue({
             connectionError: null,
             connectionsState: { connections: [] },
@@ -84,6 +99,12 @@ describe('ConnectionPage', () => {
     });
 
     it('shows connection loading and error states', async () => {
+        useConnectionsStore.setState({
+            connections: [],
+            loading: false,
+            error: null,
+            hasLoaded: true,
+        });
         useConnectionsMock
             .mockReturnValueOnce({
                 connectionError: null,

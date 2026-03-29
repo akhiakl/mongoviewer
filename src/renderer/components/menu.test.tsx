@@ -10,16 +10,21 @@ vi.mock('@/renderer/components/ui/menubar', async () => {
     const React = await import('react');
     const RadioGroupContext = React.createContext<((value: string) => void) | null>(null);
     type ChildrenProps = { children?: ReactNode };
-    type ItemProps = ChildrenProps & { onClick?: () => void };
+    type ItemProps = ChildrenProps & { onClick?: () => void; disabled?: boolean };
     type RadioGroupProps = ChildrenProps & { onValueChange: (value: string) => void };
     type RadioItemProps = ChildrenProps & { value: string };
+    type CheckboxItemProps = ChildrenProps & {
+        checked?: boolean;
+        disabled?: boolean;
+        onCheckedChange?: () => void;
+    };
 
     return {
         Menubar: ({ children }: ChildrenProps) => <div>{children}</div>,
         MenubarContent: ({ children }: ChildrenProps) => <div>{children}</div>,
         MenubarGroup: ({ children }: ChildrenProps) => <div>{children}</div>,
-        MenubarItem: ({ children, onClick }: ItemProps) => (
-            <button type="button" onClick={onClick}>{children}</button>
+        MenubarItem: ({ children, disabled, onClick }: ItemProps) => (
+            <button type="button" disabled={disabled} onClick={onClick}>{children}</button>
         ),
         MenubarMenu: ({ children }: ChildrenProps) => <div>{children}</div>,
         MenubarRadioGroup: ({
@@ -46,6 +51,18 @@ vi.mock('@/renderer/components/ui/menubar', async () => {
                 </button>
             );
         },
+        MenubarCheckboxItem: ({
+            children,
+            disabled,
+            onCheckedChange,
+        }: CheckboxItemProps) => (
+            <button type="button" disabled={disabled} onClick={() => onCheckedChange?.()}>
+                {children}
+            </button>
+        ),
+        MenubarSub: ({ children }: ChildrenProps) => <div>{children}</div>,
+        MenubarSubContent: ({ children }: ChildrenProps) => <div>{children}</div>,
+        MenubarSubTrigger: ({ children }: ChildrenProps) => <button type="button">{children}</button>,
         MenubarSeparator: () => <hr />,
         MenubarShortcut: ({ children }: ChildrenProps) => <span>{children}</span>,
         MenubarTrigger: ({ children }: ChildrenProps) => <button type="button">{children}</button>,
@@ -85,21 +102,28 @@ describe('Menu', () => {
             help: vi.fn(),
             reportIssue: vi.fn(),
             about: vi.fn(),
+            isConnectionRoute: true,
+            sidebarOpen: true,
+            queryHistoryOpen: false,
+            schemaPanelOpen: true,
+            canOpenSavedConnection: true,
+            canSaveCurrentConnection: false,
+            canShowQueryHistory: false,
         });
 
         useThemeMock.mockReturnValue({
             theme: 'system',
-            resolvedTheme: 'light',
             setTheme,
         });
 
         render(<Menu />);
 
-        expect(screen.getByText('Theme: System (Light)')).toBeInTheDocument();
-        expect(screen.getByText('Theme: Light')).toBeInTheDocument();
-        expect(screen.getByText('Theme: Dark')).toBeInTheDocument();
+        expect(screen.getByText('System')).toBeInTheDocument();
+        expect(screen.getByText('Light')).toBeInTheDocument();
+        expect(screen.getByText('Dark')).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'Save Current Connection' })).toBeDisabled();
 
-        fireEvent.click(screen.getByRole('menuitemradio', { name: 'Theme: Dark' }));
+        fireEvent.click(screen.getByRole('menuitemradio', { name: 'Dark' }));
 
         expect(setTheme).toHaveBeenCalledWith('dark');
     });

@@ -4,18 +4,14 @@ import { Link, Navigate, useNavigate, useParams } from 'react-router';
 import { MongoViewerClient } from '@/renderer/components/mongo-viewer';
 import { Button } from '@/renderer/components/ui/button';
 import { useConnections } from '@/renderer/hooks/use-connections';
+import { selectConnectionById, useConnectionsStore } from '@/renderer/stores/connections-store';
 
 export function Connections() {
     const navigate = useNavigate();
     const { connectionId } = useParams();
-    const { connectionError, connectionsState, loadingConnections } = useConnections();
-
-    const activeConnection = useMemo(
-        () =>
-            connectionId
-                ? connectionsState.connections.find((connection) => connection.id === connectionId) ?? null
-                : null,
-        [connectionId, connectionsState.connections],
+    const { connectionError, loadingConnections } = useConnections();
+    const activeConnection = useConnectionsStore(
+        useMemo(() => selectConnectionById(connectionId), [connectionId]),
     );
 
     if (!connectionId) {

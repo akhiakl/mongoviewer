@@ -1,5 +1,6 @@
-import React, { useCallback } from "react";
+import React from "react";
 import {
+    MenubarCheckboxItem,
     Menubar,
     MenubarContent,
     MenubarGroup,
@@ -18,54 +19,33 @@ import { useMenu } from "@/renderer/hooks/menu/use-menu";
 import { useTheme } from "@/renderer/components/theme-provider";
 
 const Menu: React.FC = () => {
-    // Handler hooks
     const {
         openConnection,
-        saveCurrentConnection,
         openSavedConnection,
-        renameConnection,
-        deleteConnection,
         reload, toggleSidebar, showQueryHistory, showSchemaPanel,
         undo, redo, cut, copy, paste, find,
         help, reportIssue, about,
+        isConnectionRoute,
+        sidebarOpen,
+        queryHistoryOpen,
+        schemaPanelOpen,
+        canOpenSavedConnection,
+        canSaveCurrentConnection,
+        canShowQueryHistory,
     } = useMenu();
     const { setTheme, theme } = useTheme();
-    // Local stubs for menu actions
-    const saveConnection = useCallback(() => {/* TODO: Save connection from menu */ }, []);
-    const closeTab = useCallback(() => {/* TODO: Close tab logic */ }, []);
-    const exportCollection = useCallback(() => {/* TODO: Export collection logic */ }, []);
-    const importCollection = useCallback(() => {/* TODO: Import collection logic */ }, []);
-    const preferences = useCallback(() => {/* TODO: Preferences logic */ }, []);
     return (
         <Menubar className="w-80">
-            {/* File Menu */}
             <MenubarMenu>
                 <MenubarTrigger>File</MenubarTrigger>
                 <MenubarContent>
                     <MenubarGroup>
                         <MenubarItem onClick={openConnection}>Open Connection
                             <MenubarShortcut>Ctrl+O</MenubarShortcut>
-
                         </MenubarItem>
-                        <MenubarItem onClick={saveConnection}>Save Connection
-                            <MenubarShortcut>Ctrl+S</MenubarShortcut>
-                        </MenubarItem>
-                        <MenubarItem onClick={closeTab}>Close Tab
-                            <MenubarShortcut>Ctrl+W</MenubarShortcut>
-                        </MenubarItem>
-                    </MenubarGroup>
-                    <MenubarSeparator />
-                    <MenubarGroup>
-                        <MenubarItem onClick={exportCollection}>Export Collection (CSV/JSON)</MenubarItem>
-                        <MenubarItem onClick={importCollection}>Import Collection (CSV/JSON)</MenubarItem>
-                    </MenubarGroup>
-                    <MenubarSeparator />
-                    <MenubarGroup>
-                        <MenubarItem onClick={preferences}>Preferences</MenubarItem>
                     </MenubarGroup>
                 </MenubarContent>
             </MenubarMenu>
-            {/* Edit Menu */}
             <MenubarMenu>
                 <MenubarTrigger>Edit</MenubarTrigger>
                 <MenubarContent>
@@ -93,7 +73,6 @@ const Menu: React.FC = () => {
                     </MenubarGroup>
                 </MenubarContent>
             </MenubarMenu>
-            {/* View Menu */}
             <MenubarMenu>
                 <MenubarTrigger>View</MenubarTrigger>
                 <MenubarContent>
@@ -101,9 +80,27 @@ const Menu: React.FC = () => {
                         <MenubarItem onClick={reload}>Reload
                             <MenubarShortcut>Ctrl+R</MenubarShortcut>
                         </MenubarItem>
-                        <MenubarItem onClick={toggleSidebar}>Toggle Sidebar</MenubarItem>
-                        <MenubarItem onClick={showQueryHistory}>Show Query History</MenubarItem>
-                        <MenubarItem onClick={showSchemaPanel}>Show Schema Panel</MenubarItem>
+                        <MenubarCheckboxItem
+                            checked={sidebarOpen}
+                            disabled={!isConnectionRoute}
+                            onCheckedChange={() => toggleSidebar()}
+                        >
+                            Toggle Sidebar
+                        </MenubarCheckboxItem>
+                        <MenubarCheckboxItem
+                            checked={queryHistoryOpen}
+                            disabled={!canShowQueryHistory}
+                            onCheckedChange={() => showQueryHistory()}
+                        >
+                            Show Query History
+                        </MenubarCheckboxItem>
+                        <MenubarCheckboxItem
+                            checked={schemaPanelOpen}
+                            disabled={!isConnectionRoute}
+                            onCheckedChange={() => showSchemaPanel()}
+                        >
+                            Show Schema Panel
+                        </MenubarCheckboxItem>
                         <MenubarSeparator />
                         <MenubarSub>
                             <MenubarSubTrigger>Theme</MenubarSubTrigger>
@@ -124,19 +121,19 @@ const Menu: React.FC = () => {
                     </MenubarGroup>
                 </MenubarContent>
             </MenubarMenu>
-            {/* Saved Connections Menu */}
             <MenubarMenu>
                 <MenubarTrigger>Connections</MenubarTrigger>
                 <MenubarContent>
                     <MenubarGroup>
-                        <MenubarItem onClick={openSavedConnection}>Open Saved Connection</MenubarItem>
-                        <MenubarItem onClick={saveCurrentConnection}>Save Current Connection</MenubarItem>
-                        <MenubarItem onClick={renameConnection}>Rename Connection</MenubarItem>
-                        <MenubarItem onClick={deleteConnection}>Delete Connection</MenubarItem>
+                        <MenubarItem disabled={!canOpenSavedConnection} onClick={openSavedConnection}>
+                            Open Saved Connection
+                        </MenubarItem>
+                        <MenubarItem disabled={!canSaveCurrentConnection}>
+                            Save Current Connection
+                        </MenubarItem>
                     </MenubarGroup>
                 </MenubarContent>
             </MenubarMenu>
-            {/* Help Menu */}
             <MenubarMenu>
                 <MenubarTrigger>Help</MenubarTrigger>
                 <MenubarContent>

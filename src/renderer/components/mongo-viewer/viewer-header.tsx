@@ -1,4 +1,3 @@
-import { useState } from "react"
 import { ChartColumnIncreasing, ChevronDown, Search } from "lucide-react"
 
 import { CollectionInsightsPanel } from "@/renderer/components/mongo-viewer/collection-insights-panel"
@@ -38,6 +37,8 @@ type ViewerHeaderProps = {
     queryValidationError: string | null
     schemaSummary: CollectionSchemaSummary | null
     selection: Selection | null
+    showInsights: boolean
+    onShowInsightsChange: (open: boolean) => void
     stats: CollectionStats | null
 }
 
@@ -65,10 +66,10 @@ export function ViewerHeader({
     queryValidationError,
     schemaSummary,
     selection,
+    showInsights,
+    onShowInsightsChange,
     stats,
 }: ViewerHeaderProps) {
-    const [showInsights, setShowInsights] = useState(false)
-
     return (
         <div className="border-b border-border px-4 py-4 md:px-6">
             <div className="min-w-0">
@@ -89,7 +90,7 @@ export function ViewerHeader({
                             size="sm"
                             className="h-7 px-2 text-xs"
                             aria-expanded={showInsights}
-                            onClick={() => setShowInsights((current) => !current)}
+                            onClick={() => onShowInsightsChange(!showInsights)}
                         >
                             <ChartColumnIncreasing className="size-3.5" />
                             {showInsights ? "Hide Insights" : "Collection Insights"}
@@ -101,7 +102,7 @@ export function ViewerHeader({
 
 
             {selection ? (
-                <Collapsible open={showInsights} onOpenChange={setShowInsights}>
+                <Collapsible open={showInsights} onOpenChange={onShowInsightsChange}>
                     <CollapsibleContent className="pt-4">
                         <CollectionInsightsPanel
                             indexes={indexes}

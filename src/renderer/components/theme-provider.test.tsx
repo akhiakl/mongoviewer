@@ -1,5 +1,8 @@
 import { act, render, screen, waitFor } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { APP_UI_STORAGE_KEY } from '@/renderer/stores/app-ui-store';
+import { useAppUiStore } from '@/renderer/stores/app-ui-store';
 
 const setThemePreferenceMock = vi.fn(
     async (theme: 'system' | 'light' | 'dark') => {
@@ -22,6 +25,22 @@ vi.mock('react-router', async () => {
 
 import { initializeTheme, ThemeProvider, useTheme } from '@/renderer/components/theme-provider';
 
+function storeThemePreference(themePreference: 'system' | 'light' | 'dark') {
+    window.localStorage.setItem(
+        APP_UI_STORAGE_KEY,
+        JSON.stringify({
+            state: {
+                themePreference,
+            },
+            version: 0,
+        }),
+    );
+}
+
+async function rehydrateThemeStore() {
+    await useAppUiStore.persist.rehydrate();
+}
+
 function ThemeConsumer() {
     const { resolvedTheme, setTheme, theme } = useTheme();
 
@@ -37,8 +56,18 @@ function ThemeConsumer() {
 }
 
 describe('ThemeProvider', () => {
+    beforeEach(() => {
+        window.localStorage.clear();
+        useAppUiStore.setState({
+            themePreference: 'system',
+            sidebarOpen: true,
+            queryHistoryOpen: false,
+            schemaPanelOpen: false,
+        });
+    });
+
     it('initializes the document theme before React renders', () => {
-        window.localStorage.setItem('mongoviewer-theme', 'dark');
+        storeThemePreference('dark');
 
         initializeTheme();
 
@@ -47,7 +76,8 @@ describe('ThemeProvider', () => {
     });
 
     it('hydrates from storage and applies the selected theme', async () => {
-        window.localStorage.setItem('mongoviewer-theme', 'dark');
+        storeThemePreference('dark');
+        await rehydrateThemeStore();
 
         render(
             <ThemeProvider>
@@ -66,7 +96,8 @@ describe('ThemeProvider', () => {
 
     it('follows the system theme and reacts to media query changes', async () => {
         mediaQueryMatches = false;
-        window.localStorage.setItem('mongoviewer-theme', 'system');
+        storeThemePreference('system');
+        await rehydrateThemeStore();
         window.matchMedia = vi.fn().mockImplementation((query: string) => ({
             matches: mediaQueryMatches,
             media: query,
@@ -119,7 +150,7 @@ describe('ThemeProvider', () => {
             expect(screen.getByText('Theme:light')).toBeInTheDocument();
         });
 
-        expect(window.localStorage.getItem('mongoviewer-theme')).toBe('light');
+        expect(window.localStorage.getItem(APP_UI_STORAGE_KEY)).toContain('"themePreference":"light"');
         expect(document.documentElement.classList.contains('dark')).toBe(false);
         expect(setThemePreferenceMock).toHaveBeenLastCalledWith('light');
     });

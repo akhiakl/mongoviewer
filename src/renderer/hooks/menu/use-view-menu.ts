@@ -1,21 +1,40 @@
 import { useCallback } from 'react';
+import { useMatch } from 'react-router';
+
+import { useAppUiStore } from '@/renderer/stores/app-ui-store';
 
 export function useViewMenu() {
+    const isConnectionRoute = useMatch('/connections/:connectionId') !== null;
+    const toggleSidebarState = useAppUiStore((state) => state.toggleSidebar);
+    const toggleQueryHistoryState = useAppUiStore((state) => state.toggleQueryHistory);
+    const toggleSchemaPanelState = useAppUiStore((state) => state.toggleSchemaPanel);
+    const sidebarOpen = useAppUiStore((state) => state.sidebarOpen);
+    const queryHistoryOpen = useAppUiStore((state) => state.queryHistoryOpen);
+    const schemaPanelOpen = useAppUiStore((state) => state.schemaPanelOpen);
+
     const reload = useCallback(() => window.location.reload(), []);
     const toggleSidebar = useCallback(() => {
-        alert('Toggle sidebar (not yet implemented)');
-    }, []);
+        if (isConnectionRoute) {
+            toggleSidebarState();
+        }
+    }, [isConnectionRoute, toggleSidebarState]);
     const showQueryHistory = useCallback(() => {
-        alert('Show query history (not yet implemented)');
-    }, []);
+        toggleQueryHistoryState();
+    }, [toggleQueryHistoryState]);
     const showSchemaPanel = useCallback(() => {
-        alert('Show schema panel (not yet implemented)');
-    }, []);
+        if (isConnectionRoute) {
+            toggleSchemaPanelState();
+        }
+    }, [isConnectionRoute, toggleSchemaPanelState]);
 
     return {
         reload,
         toggleSidebar,
         showQueryHistory,
         showSchemaPanel,
+        isConnectionRoute,
+        sidebarOpen,
+        queryHistoryOpen,
+        schemaPanelOpen,
     };
 }

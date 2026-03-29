@@ -1,7 +1,13 @@
 import React from 'react';
-import { mongoViewer } from '@/renderer/renderer-api';
 
-export type ThemePreference = 'system' | 'light' | 'dark';
+import { mongoViewer } from '@/renderer/renderer-api';
+import {
+    getStoredThemePreference,
+    selectThemePreference,
+    type ThemePreference,
+    useAppUiStore,
+} from '@/renderer/stores/app-ui-store';
+
 export type ResolvedTheme = 'light' | 'dark';
 
 type ThemeContextValue = {
@@ -10,23 +16,8 @@ type ThemeContextValue = {
     setTheme: (theme: ThemePreference) => void;
 };
 
-const STORAGE_KEY = 'mongoviewer-theme';
 const MEDIA_QUERY = '(prefers-color-scheme: dark)';
-
 const ThemeContext = React.createContext<ThemeContextValue | null>(null);
-
-function getStoredTheme(): ThemePreference {
-    if (typeof window === 'undefined') {
-        return 'system';
-    }
-
-    const storedTheme = window.localStorage.getItem(STORAGE_KEY);
-    if (storedTheme === 'light' || storedTheme === 'dark' || storedTheme === 'system') {
-        return storedTheme;
-    }
-
-    return 'system';
-}
 
 function getSystemTheme(): ResolvedTheme {
     if (typeof window === 'undefined') {
@@ -47,11 +38,12 @@ function resolveThemePreference(theme: ThemePreference): ResolvedTheme {
 }
 
 export function initializeTheme() {
-    applyTheme(resolveThemePreference(getStoredTheme()));
+    applyTheme(resolveThemePreference(getStoredThemePreference()));
 }
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-    const [theme, setThemeState] = React.useState<ThemePreference>(() => getStoredTheme());
+    const theme = useAppUiStore(selectThemePreference);
+    const setTheme = useAppUiStore((state) => state.setThemePreference);
     const [systemTheme, setSystemTheme] = React.useState<ResolvedTheme>(() => getSystemTheme());
 
     React.useEffect(() => {
@@ -75,11 +67,6 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     React.useEffect(() => {
         void mongoViewer.setThemePreference(theme);
     }, [theme]);
-
-    const setTheme = React.useCallback((nextTheme: ThemePreference) => {
-        setThemeState(nextTheme);
-        window.localStorage.setItem(STORAGE_KEY, nextTheme);
-    }, []);
 
     const value = React.useMemo(
         () => ({

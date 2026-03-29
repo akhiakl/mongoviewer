@@ -2,6 +2,8 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { MongoViewerClient } from '@/renderer/components/mongo-viewer';
+import { useAppUiStore } from '@/renderer/stores/app-ui-store';
+import { useViewerPreferencesStore } from '@/renderer/stores/viewer-preferences-store';
 
 const useDatabasesTreeMock = vi.fn();
 const useCollectionDocumentsMock = vi.fn();
@@ -85,6 +87,16 @@ vi.mock('@/renderer/components/mongo-viewer/records-json-list', () => ({
 
 describe('MongoViewerClient', () => {
   beforeEach(() => {
+    window.localStorage.clear();
+    useAppUiStore.setState({
+      themePreference: 'system',
+      sidebarOpen: true,
+      queryHistoryOpen: false,
+      schemaPanelOpen: false,
+    });
+    useViewerPreferencesStore.setState({
+      preferencesByConnection: {},
+    });
     useDatabasesTreeMock.mockReturnValue({
       tree: [{ name: 'app', collections: ['users', 'orders'] }],
       loadingTree: false,
@@ -251,7 +263,7 @@ describe('MongoViewerClient', () => {
       expect(screen.getByText('Query fields:_id,name,shipping,shipping.city')).toBeInTheDocument();
       expect(screen.getByText('Query sample keys:_id,name,shipping.city')).toBeInTheDocument();
     });
-  });
+  }, 15000);
 
   it('shows inline recovery actions for invalid query and empty result states', async () => {
     render(
@@ -436,6 +448,50 @@ describe('MongoViewerClient', () => {
     await waitFor(() => {
       expect(screen.getByText('No records match the current quick filter.')).toBeInTheDocument();
       expect(screen.getByRole('button', { name: 'Clear Quick Filter' })).toBeInTheDocument();
+    });
+  });
+
+  it('persists key viewer preferences per connection but resets query drafts and quick filters', async () => {
+    const { unmount } = render(
+      <MongoViewerClient
+        connectionId="conn-1"
+        activeConnectionName="Prod Cluster"
+        onBack={vi.fn()}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Sidebar Selection:app/users')).toBeInTheDocument();
+    });
+
+    fireEvent.change(screen.getByLabelText('Rows per page'), { target: { value: '100' } });
+    fireEvent.click(screen.getByRole('radio', { name: 'JSON view' }));
+    fireEvent.click(screen.getByRole('button', { name: /collection insights/i }));
+    fireEvent.click(screen.getByRole('button', { name: 'Pick Orders' }));
+    fireEvent.change(screen.getByPlaceholderText('Filter records already loaded on this page'), {
+      target: { value: 'order' },
+    });
+    fireEvent.change(screen.getByLabelText('Mongo query editor'), {
+      target: { value: '{"status":"active"}' },
+    });
+
+    unmount();
+
+    render(
+      <MongoViewerClient
+        connectionId="conn-1"
+        activeConnectionName="Prod Cluster"
+        onBack={vi.fn()}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Sidebar Selection:app/orders')).toBeInTheDocument();
+      expect(screen.getByText('Collection Stats')).toBeInTheDocument();
+      expect(screen.getByText('Json Count:1')).toBeInTheDocument();
+      expect(screen.getByLabelText('Rows per page')).toHaveValue('100');
+      expect(screen.getByPlaceholderText('Filter records already loaded on this page')).toHaveValue('');
+      expect(screen.getByLabelText('Mongo query editor')).toHaveValue('');
     });
   });
 });

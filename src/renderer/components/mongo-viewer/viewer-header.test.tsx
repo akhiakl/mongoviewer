@@ -1,4 +1,5 @@
 import { fireEvent, render, screen } from '@testing-library/react';
+import React from 'react';
 import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('@/renderer/components/mongo-viewer/query-editor', () => ({
@@ -74,6 +75,8 @@ describe('ViewerHeader', () => {
           ],
         }}
         selection={{ db: 'app', collection: 'users' }}
+        showInsights={false}
+        onShowInsightsChange={vi.fn()}
         stats={{
           documentCount: 2,
           avgDocumentSize: 128,
@@ -127,6 +130,8 @@ describe('ViewerHeader', () => {
         quickFilter=""
         schemaSummary={null}
         selection={{ db: 'app', collection: 'users' }}
+        showInsights={false}
+        onShowInsightsChange={vi.fn()}
         stats={null}
       />,
     );
@@ -154,54 +159,62 @@ describe('ViewerHeader', () => {
   });
 
   it('shows insights only when the header toggle is opened', () => {
-    render(
-      <ViewerHeader
-        activeConnectionName="Prod Cluster"
-        appliedMongoQuery=""
-        filteredRecordsCount={2}
-        indexes={[
-          {
-            name: "_id_",
-            fields: ["_id (1)"],
-            unique: true,
-            sparse: false,
-            partial: false,
-            ttlSeconds: null,
-          },
-        ]}
-        loadingInsights={false}
-        loadingDocs={false}
-        onApplyQuery={vi.fn()}
-        onDeletePreset={vi.fn()}
-        onPresetNameChange={vi.fn()}
-        onPresetSelect={vi.fn()}
-        onQueryDraftChange={vi.fn()}
-        onQuickFilterChange={vi.fn()}
-        onResetQuery={vi.fn()}
-        onSavePreset={vi.fn()}
-        presetName=""
-        presets={[]}
-        queryFieldNames={['_id', 'status']}
-        queryFieldSamples={{ status: ['active'] }}
-        queryDraft=""
-        queryValidationError={null}
-        quickFilter=""
-        schemaSummary={{
-          sampleSize: 2,
-          fields: [
-            { path: "status", types: ["string"], presenceRate: 1, exampleValues: ["active"] },
-          ],
-        }}
-        selection={{ db: 'app', collection: 'users' }}
-        stats={{
-          documentCount: 2,
-          avgDocumentSize: 128,
-          storageSize: 2048,
-          totalIndexSize: 512,
-          totalIndexes: 1,
-        }}
-      />,
-    );
+    function ControlledHeader() {
+      const [showInsights, setShowInsights] = React.useState(false)
+
+      return (
+        <ViewerHeader
+          activeConnectionName="Prod Cluster"
+          appliedMongoQuery=""
+          filteredRecordsCount={2}
+          indexes={[
+            {
+              name: "_id_",
+              fields: ["_id (1)"],
+              unique: true,
+              sparse: false,
+              partial: false,
+              ttlSeconds: null,
+            },
+          ]}
+          loadingInsights={false}
+          loadingDocs={false}
+          onApplyQuery={vi.fn()}
+          onDeletePreset={vi.fn()}
+          onPresetNameChange={vi.fn()}
+          onPresetSelect={vi.fn()}
+          onQueryDraftChange={vi.fn()}
+          onQuickFilterChange={vi.fn()}
+          onResetQuery={vi.fn()}
+          onSavePreset={vi.fn()}
+          presetName=""
+          presets={[]}
+          queryFieldNames={['_id', 'status']}
+          queryFieldSamples={{ status: ['active'] }}
+          queryDraft=""
+          queryValidationError={null}
+          quickFilter=""
+          schemaSummary={{
+            sampleSize: 2,
+            fields: [
+              { path: "status", types: ["string"], presenceRate: 1, exampleValues: ["active"] },
+            ],
+          }}
+          selection={{ db: 'app', collection: 'users' }}
+          showInsights={showInsights}
+          onShowInsightsChange={setShowInsights}
+          stats={{
+            documentCount: 2,
+            avgDocumentSize: 128,
+            storageSize: 2048,
+            totalIndexSize: 512,
+            totalIndexes: 1,
+          }}
+        />
+      )
+    }
+
+    render(<ControlledHeader />);
 
     expect(screen.queryByText('Collection Stats')).not.toBeInTheDocument();
 
@@ -237,6 +250,8 @@ describe('ViewerHeader', () => {
         quickFilter=""
         schemaSummary={null}
         selection={{ db: 'app', collection: 'users' }}
+        showInsights={false}
+        onShowInsightsChange={vi.fn()}
         stats={null}
       />,
     );
@@ -271,6 +286,8 @@ describe('ViewerHeader', () => {
         quickFilter=""
         schemaSummary={null}
         selection={null}
+        showInsights={false}
+        onShowInsightsChange={vi.fn()}
         stats={null}
       />,
     );

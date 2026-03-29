@@ -1,160 +1,122 @@
-import React, { useMemo, useState } from "react"
+import { useMemo } from 'react';
 
-import { Alert, AlertDescription } from "@/renderer/components/ui/alert"
-import { DatabasesSidebar } from "@/renderer/components/mongo-viewer/databases-sidebar"
-import { useCollectionDocuments } from "@/renderer/components/mongo-viewer/hooks/use-collection-documents"
-import { useCollectionInsights } from "@/renderer/components/mongo-viewer/hooks/use-collection-insights"
-import { useDatabasesTree } from "@/renderer/components/mongo-viewer/hooks/use-databases-tree"
-import { useQueryPresets } from "@/renderer/components/mongo-viewer/hooks/use-query-presets"
-import { getQueryFieldNames, getQueryFieldSamples } from "@/renderer/components/mongo-viewer/query-field-metadata"
-import { ViewerHeader } from "@/renderer/components/mongo-viewer/viewer-header"
-import { ViewerContent } from "@/renderer/components/mongo-viewer/viewer-content"
-import { ViewerFooter } from "@/renderer/components/mongo-viewer/viewer-footer"
-import { ViewerNavigation } from "@/renderer/components/mongo-viewer/viewer-navigation"
-import type { DatabaseTreeItem, Selection, SortDirection, ViewMode } from "@/renderer/components/mongo-viewer/types"
-import { SidebarProvider } from "./ui/sidebar"
-import { validateMongoQuery } from "@/lib/query-validation"
-import { useDebouncedValue } from "@/renderer/hooks/use-debounced-value"
+import { Alert, AlertDescription } from '@/renderer/components/ui/alert';
+import { SidebarProvider } from '@/renderer/components/ui/sidebar';
+import { DatabasesSidebar } from '@/renderer/components/mongo-viewer/databases-sidebar';
+import { useDatabasesTree } from '@/renderer/components/mongo-viewer/hooks/use-databases-tree';
+import { useQueryPresets } from '@/renderer/components/mongo-viewer/hooks/use-query-presets';
+import { useViewerData } from '@/renderer/components/mongo-viewer/hooks/use-viewer-data';
+import { useViewerPreferences } from '@/renderer/components/mongo-viewer/hooks/use-viewer-preferences';
+import { useViewerQueryState } from '@/renderer/components/mongo-viewer/hooks/use-viewer-query-state';
+import { useViewerSelectionState } from '@/renderer/components/mongo-viewer/hooks/use-viewer-selection-state';
+import { ViewerContent } from '@/renderer/components/mongo-viewer/viewer-content';
+import { ViewerFooter } from '@/renderer/components/mongo-viewer/viewer-footer';
+import { ViewerHeader } from '@/renderer/components/mongo-viewer/viewer-header';
+import { ViewerNavigation } from '@/renderer/components/mongo-viewer/viewer-navigation';
+import { validateMongoQuery } from '@/lib/query-validation';
 
 type MongoViewerClientProps = {
-    connectionId: string
-    activeConnectionName: string | null
-    onBack?: () => void
-}
+    connectionId: string;
+    activeConnectionName: string | null;
+    onBack?: () => void;
+};
 
-const MAX_AUTOCOMPLETE_RECORDS = 100
-function pickSelection(tree: DatabaseTreeItem[], current: Selection | null) {
-    if (current) {
-        const matchingDatabase = tree.find((db) => db.name === current.db)
-        if (matchingDatabase?.collections.includes(current.collection)) {
-            return current
-        }
-    }
-
-    for (const database of tree) {
-        if (database.collections.length > 0) {
-            return {
-                db: database.name,
-                collection: database.collections[0],
-            }
-        }
-    }
-
-    return null
-}
-
-export function MongoViewerClient({ connectionId, activeConnectionName, onBack }: MongoViewerClientProps) {
-    const [selection, setSelection] = useState<Selection | null>(null)
-    const [page, setPage] = useState(1)
-    const [pageSize, setPageSize] = useState(50)
-    const [viewMode, setViewMode] = useState<ViewMode>("table")
-    const [quickFilter, setQuickFilter] = useState("")
-    const [queryDraft, setQueryDraft] = useState("")
-    const [appliedMongoQuery, setAppliedMongoQuery] = useState("")
-    const [presetName, setPresetName] = useState("")
-    const [sortField, setSortField] = useState<string | null>(null)
-    const [sortDirection, setSortDirection] = useState<SortDirection>("asc")
-
-    const { presets, deletePreset, getPresetByName, savePreset } = useQueryPresets(selection)
-
-    const { tree, loadingTree, treeError, refreshTree } = useDatabasesTree(connectionId)
-    const { records, total, loadingDocs, docsError } = useCollectionDocuments({
+export function MongoViewerClient({
+    connectionId,
+    activeConnectionName,
+    onBack,
+}: MongoViewerClientProps) {
+    const viewerPreferences = useViewerPreferences(connectionId);
+    const { tree, loadingTree, treeError, refreshTree } = useDatabasesTree(connectionId);
+    const { selection, setSelection } = useViewerSelectionState({
+        connectionId,
+        initialSelection: viewerPreferences.lastSelection,
+        tree,
+        onSelectionPersist: viewerPreferences.setLastSelection,
+    });
+    const queryState = useViewerQueryState(selection);
+    const viewerData = useViewerData({
         connectionId,
         selection,
-        page,
-        pageSize,
-        mongoQuery: appliedMongoQuery || undefined,
-        sortDirection,
-        sortField,
-    })
-    const { indexes, insightsError, loadingInsights, schemaSummary, stats } = useCollectionInsights(connectionId, selection)
+        page: queryState.page,
+        pageSize: viewerPreferences.pageSize,
+        quickFilter: queryState.quickFilter,
+        appliedMongoQuery: queryState.appliedMongoQuery,
+        sortDirection: queryState.sortDirection,
+        sortField: queryState.sortField,
+    });
+    const { presets, deletePreset, getPresetByName, savePreset } = useQueryPresets(selection);
 
-    const debouncedQuickFilter = useDebouncedValue(quickFilter, 220)
-
-    const filteredRecords = useMemo(() => {
-        const normalizedFilter = debouncedQuickFilter.trim().toLowerCase()
-        if (!normalizedFilter) {
-            return records
-        }
-
-        return records.filter((record) => JSON.stringify(record).toLowerCase().includes(normalizedFilter))
-    }, [debouncedQuickFilter, records])
-    const queryFieldNames = useMemo(() => getQueryFieldNames(records, MAX_AUTOCOMPLETE_RECORDS), [records])
-    const queryFieldSamples = useMemo(() => getQueryFieldSamples(records, MAX_AUTOCOMPLETE_RECORDS), [records])
-
-    React.useEffect(() => {
-        setSelection((current) => pickSelection(tree, current))
-        setPage(1)
-    }, [tree])
-
-    React.useEffect(() => {
-        setQuickFilter("")
-        setQueryDraft("")
-        setAppliedMongoQuery("")
-        setPresetName("")
-        setPageSize(50)
-        setSortField(null)
-        setSortDirection("asc")
-    }, [selection?.collection, selection?.db])
-
-    const totalPages = Math.max(1, Math.ceil(total / pageSize))
-    const error = docsError ?? treeError ?? insightsError
-    const queryValidationError = useMemo(() => validateMongoQuery(queryDraft), [queryDraft])
-    const hasQuickFilter = debouncedQuickFilter.trim().length > 0
-    const hasActiveMongoQuery = appliedMongoQuery.trim().length > 0
+    const queryValidationError = useMemo(
+        () => validateMongoQuery(queryState.queryDraft),
+        [queryState.queryDraft],
+    );
+    const totalPages = Math.max(1, Math.ceil(viewerData.total / viewerPreferences.pageSize));
+    const error = viewerData.docsError ?? treeError ?? viewerData.insightsError;
+    const hasQuickFilter = queryState.quickFilter.trim().length > 0;
+    const hasActiveMongoQuery = queryState.appliedMongoQuery.trim().length > 0;
     const noResultsMessage = useMemo(() => {
-        if (records.length === 0 && hasActiveMongoQuery) {
-            return "No records match the current Mongo query."
+        if (viewerData.records.length === 0 && hasActiveMongoQuery) {
+            return 'No records match the current Mongo query.';
         }
 
-        if (records.length === 0) {
-            return "No records for this collection."
+        if (viewerData.records.length === 0) {
+            return 'No records for this collection.';
         }
 
-        return "No records match the current quick filter."
-    }, [hasActiveMongoQuery, records.length])
+        return 'No records match the current quick filter.';
+    }, [hasActiveMongoQuery, viewerData.records.length]);
 
     const handleApplyQuery = () => {
         if (queryValidationError) {
-            return
+            return;
         }
 
-        setAppliedMongoQuery(queryDraft.trim())
-        setPage(1)
-    }
+        queryState.setAppliedMongoQuery(queryState.queryDraft.trim());
+        queryState.setPage(1);
+    };
 
     const handleResetQuery = () => {
-        setQueryDraft("")
-        setAppliedMongoQuery("")
-        setPresetName("")
-        setPage(1)
-    }
+        queryState.setQueryDraft('');
+        queryState.setAppliedMongoQuery('');
+        queryState.setPresetName('');
+        queryState.setPage(1);
+    };
 
     const handleSavePreset = () => {
-        if (savePreset(presetName, queryDraft)) {
-            setPresetName(presetName.trim())
+        if (savePreset(queryState.presetName, queryState.queryDraft)) {
+            queryState.setPresetName(queryState.presetName.trim());
         }
-    }
+    };
 
     const handleDeletePreset = () => {
-        if (deletePreset(presetName)) {
-            setPresetName("")
+        if (deletePreset(queryState.presetName)) {
+            queryState.setPresetName('');
         }
-    }
+    };
 
     const handlePresetSelect = (name: string) => {
-        setPresetName(name)
+        queryState.setPresetName(name);
 
-        const preset = getPresetByName(name)
+        const preset = getPresetByName(name);
         if (preset) {
-            setQueryDraft(preset.query)
+            queryState.setQueryDraft(preset.query);
         }
-    }
+    };
 
     return (
         <section className="flex min-h-0 flex-1 flex-col overflow-hidden">
-            {onBack ? <ViewerNavigation activeConnectionName={activeConnectionName} onBack={onBack} /> : null}
-            <SidebarProvider className="flex min-h-0 flex-1">
+            {onBack ? (
+                <ViewerNavigation
+                    activeConnectionName={activeConnectionName}
+                    onBack={onBack}
+                />
+            ) : null}
+            <SidebarProvider
+                open={viewerPreferences.sidebarOpen}
+                onOpenChange={viewerPreferences.setSidebarOpen}
+                className="flex min-h-0 flex-1"
+            >
                 <DatabasesSidebar
                     tree={tree}
                     loadingTree={loadingTree}
@@ -162,36 +124,38 @@ export function MongoViewerClient({ connectionId, activeConnectionName, onBack }
                     selection={selection}
                     onRefresh={() => void refreshTree()}
                     onSelectCollection={(nextSelection) => {
-                        setSelection(nextSelection)
-                        setPage(1)
+                        setSelection(nextSelection);
+                        queryState.setPage(1);
                     }}
                 />
                 <div className="min-h-0 flex-1 overflow-y-auto">
                     <ViewerHeader
                         activeConnectionName={activeConnectionName}
-                        appliedMongoQuery={appliedMongoQuery}
-                        filteredRecordsCount={filteredRecords.length}
-                        indexes={indexes}
-                        loadingInsights={loadingInsights}
-                        loadingDocs={loadingDocs}
+                        appliedMongoQuery={queryState.appliedMongoQuery}
+                        filteredRecordsCount={viewerData.filteredRecords.length}
+                        indexes={viewerData.indexes}
+                        loadingInsights={viewerData.loadingInsights}
+                        loadingDocs={viewerData.loadingDocs}
                         onApplyQuery={handleApplyQuery}
                         onDeletePreset={handleDeletePreset}
-                        onPresetNameChange={setPresetName}
+                        onPresetNameChange={queryState.setPresetName}
                         onPresetSelect={handlePresetSelect}
-                        onQueryDraftChange={setQueryDraft}
-                        onQuickFilterChange={setQuickFilter}
+                        onQueryDraftChange={queryState.setQueryDraft}
+                        onQuickFilterChange={queryState.setQuickFilter}
                         onResetQuery={handleResetQuery}
                         onSavePreset={handleSavePreset}
-                        presetName={presetName}
+                        presetName={queryState.presetName}
                         presets={presets}
-                        queryFieldNames={queryFieldNames}
-                        queryFieldSamples={queryFieldSamples}
-                        queryDraft={queryDraft}
+                        queryFieldNames={viewerData.queryFieldNames}
+                        queryFieldSamples={viewerData.queryFieldSamples}
+                        queryDraft={queryState.queryDraft}
                         queryValidationError={queryValidationError}
-                        quickFilter={quickFilter}
-                        schemaSummary={schemaSummary}
+                        quickFilter={queryState.quickFilter}
+                        schemaSummary={viewerData.schemaSummary}
                         selection={selection}
-                        stats={stats}
+                        showInsights={viewerPreferences.showInsights}
+                        onShowInsightsChange={viewerPreferences.setShowInsights}
+                        stats={viewerData.stats}
                     />
 
                     {error ? (
@@ -205,41 +169,41 @@ export function MongoViewerClient({ connectionId, activeConnectionName, onBack }
                     <ViewerContent
                         hasActiveMongoQuery={hasActiveMongoQuery}
                         hasQuickFilter={hasQuickFilter}
-                        filteredRecords={filteredRecords}
-                        loadingDocs={loadingDocs}
+                        filteredRecords={viewerData.filteredRecords}
+                        loadingDocs={viewerData.loadingDocs}
                         noResultsMessage={noResultsMessage}
-                        onClearQuickFilter={() => setQuickFilter("")}
+                        onClearQuickFilter={() => queryState.setQuickFilter('')}
                         onResetQuery={handleResetQuery}
                         onSortDirectionChange={(direction) => {
-                            setSortDirection(direction)
-                            setPage(1)
+                            queryState.setSortDirection(direction);
+                            queryState.setPage(1);
                         }}
                         onSortFieldChange={(field) => {
-                            setSortField(field)
-                            setPage(1)
+                            queryState.setSortField(field);
+                            queryState.setPage(1);
                         }}
-                        onViewModeChange={setViewMode}
-                        queryFieldNames={queryFieldNames}
+                        onViewModeChange={viewerPreferences.setViewMode}
+                        queryFieldNames={viewerData.queryFieldNames}
                         selection={selection}
-                        sortDirection={sortDirection}
-                        sortField={sortField}
-                        viewMode={viewMode}
+                        sortDirection={queryState.sortDirection}
+                        sortField={queryState.sortField}
+                        viewMode={viewerPreferences.viewMode}
                     />
                     <ViewerFooter
-                        loadingDocs={loadingDocs}
-                        onPageChange={setPage}
+                        loadingDocs={viewerData.loadingDocs}
+                        onPageChange={queryState.setPage}
                         onPageSizeChange={(nextPageSize) => {
-                            setPageSize(nextPageSize)
-                            setPage(1)
+                            viewerPreferences.setPageSize(nextPageSize);
+                            queryState.setPage(1);
                         }}
-                        page={page}
-                        pageSize={pageSize}
+                        page={queryState.page}
+                        pageSize={viewerPreferences.pageSize}
                         selection={selection}
-                        total={total}
+                        total={viewerData.total}
                         totalPages={totalPages}
                     />
                 </div>
             </SidebarProvider>
         </section>
-    )
+    );
 }
