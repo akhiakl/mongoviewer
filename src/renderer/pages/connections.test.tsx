@@ -48,7 +48,7 @@ describe('ConnectionPage', () => {
             loadingConnections: false,
         });
 
-        const { ConnectionPage } = await import('@/renderer/pages/connection-page');
+        const { Connections: ConnectionPage } = await import('@/renderer/pages/connections');
 
         render(
             <MemoryRouter initialEntries={['/connections/conn-1']}>
@@ -69,7 +69,7 @@ describe('ConnectionPage', () => {
             loadingConnections: false,
         });
 
-        const { ConnectionPage } = await import('@/renderer/pages/connection-page');
+        const { Connections: ConnectionPage } = await import('@/renderer/pages/connections');
 
         render(
             <MemoryRouter initialEntries={['/connections/missing']}>
@@ -96,7 +96,7 @@ describe('ConnectionPage', () => {
                 loadingConnections: false,
             });
 
-        const { ConnectionPage } = await import('@/renderer/pages/connection-page');
+        const { Connections: ConnectionPage } = await import('@/renderer/pages/connections');
 
         const { rerender } = render(
             <MemoryRouter initialEntries={['/connections/conn-1']}>

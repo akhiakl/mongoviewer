@@ -5,7 +5,7 @@ import { MongoViewerClient } from '@/renderer/components/mongo-viewer';
 import { Button } from '@/renderer/components/ui/button';
 import { useConnections } from '@/renderer/hooks/use-connections';
 
-export function ConnectionPage() {
+export function Connections() {
     const navigate = useNavigate();
     const { connectionId } = useParams();
     const { connectionError, connectionsState, loadingConnections } = useConnections();
