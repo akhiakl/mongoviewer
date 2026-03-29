@@ -1,4 +1,4 @@
-import { AppHandlers } from "./ipc/register-ipc-handlers";
+import type { AppHandlers } from "./ipc/register-ipc-handlers";
 
 type HandlerMap = AppHandlers;
 

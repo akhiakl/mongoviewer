@@ -11,6 +11,9 @@
     "make": "electron-forge make",
     "publish": "electron-forge publish",
     "lint": "eslint .",
+    "typecheck": "pnpm run typecheck:renderer && pnpm run typecheck:node",
+    "typecheck:renderer": "tsc --noEmit -p tsconfig.renderer.json",
+    "typecheck:node": "tsc --noEmit -p tsconfig.node.json",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage"

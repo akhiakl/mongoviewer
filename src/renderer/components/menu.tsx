@@ -1,16 +1,21 @@
 import React, { useCallback } from "react";
 import {
     Menubar,
-    MenubarCheckboxItem,
     MenubarContent,
     MenubarGroup,
     MenubarItem,
     MenubarMenu,
+    MenubarRadioGroup,
+    MenubarRadioItem,
     MenubarSeparator,
     MenubarShortcut,
+    MenubarSub,
+    MenubarSubContent,
+    MenubarSubTrigger,
     MenubarTrigger,
 } from "@/renderer/components/ui/menubar"
 import { useMenu } from "@/renderer/hooks/menu/use-menu";
+import { useTheme } from "@/renderer/components/theme-provider";
 
 const Menu: React.FC = () => {
     // Handler hooks
@@ -23,8 +28,8 @@ const Menu: React.FC = () => {
         reload, toggleSidebar, showQueryHistory, showSchemaPanel,
         undo, redo, cut, copy, paste, find,
         help, reportIssue, about,
-        darkTheme, toggleDarkTheme,
     } = useMenu();
+    const { setTheme, theme } = useTheme();
     // Local stubs for menu actions
     const saveConnection = useCallback(() => {/* TODO: Save connection from menu */ }, []);
     const closeTab = useCallback(() => {/* TODO: Close tab logic */ }, []);
@@ -100,7 +105,22 @@ const Menu: React.FC = () => {
                         <MenubarItem onClick={showQueryHistory}>Show Query History</MenubarItem>
                         <MenubarItem onClick={showSchemaPanel}>Show Schema Panel</MenubarItem>
                         <MenubarSeparator />
-                        <MenubarCheckboxItem checked={darkTheme} onCheckedChange={toggleDarkTheme}>Dark Theme</MenubarCheckboxItem>
+                        <MenubarSub>
+                            <MenubarSubTrigger>Theme</MenubarSubTrigger>
+                            <MenubarSubContent>
+                                <MenubarRadioGroup value={theme} onValueChange={(value) => {
+                                    if (value === 'system' || value === 'light' || value === 'dark') {
+                                        setTheme(value);
+                                    }
+                                }}>
+                                    <MenubarRadioItem value="system">
+                                        System
+                                    </MenubarRadioItem>
+                                    <MenubarRadioItem value="light">Light</MenubarRadioItem>
+                                    <MenubarRadioItem value="dark">Dark</MenubarRadioItem>
+                                </MenubarRadioGroup>
+                            </MenubarSubContent>
+                        </MenubarSub>
                     </MenubarGroup>
                 </MenubarContent>
             </MenubarMenu>

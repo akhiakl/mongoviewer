@@ -1,21 +1,6 @@
 import path from 'node:path';
-import { BrowserWindow, nativeTheme } from 'electron/main';
-
-function getTitleBarOverlay() {
-    if (nativeTheme.shouldUseDarkColors) {
-        return {
-            color: '#09090b',
-            symbolColor: '#fafafa',
-            height: 40,
-        };
-    }
-
-    return {
-        color: '#ffffff',
-        symbolColor: '#09090b',
-        height: 40,
-    };
-}
+import { BrowserWindow } from 'electron/main';
+import { getTitleBarOverlay, syncWindowOverlayWithSystemTheme } from './window-theme-service';
 
 export function createMainWindow() {
     const isMac = process.platform === 'darwin';
@@ -49,14 +34,8 @@ export function createMainWindow() {
     }
 
     if (!isMac) {
-        const onThemeUpdated = () => {
-            mainWindow.setTitleBarOverlay(getTitleBarOverlay());
-        };
-
-        nativeTheme.on('updated', onThemeUpdated);
-        mainWindow.on('closed', () => {
-            nativeTheme.removeListener('updated', onThemeUpdated);
-        });
+        const cleanupThemeSync = syncWindowOverlayWithSystemTheme(mainWindow);
+        mainWindow.on('closed', cleanupThemeSync);
     }
 
     return mainWindow;

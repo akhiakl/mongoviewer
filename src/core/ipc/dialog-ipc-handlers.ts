@@ -1,4 +1,4 @@
-import { IpcHandlerMap } from '@/shared/types';
+import type { IpcHandlerMap } from '@/shared/types';
 import { persistTlsCertificate } from '../tls-certificate-service';
 
 import { dialog, } from 'electron/main';

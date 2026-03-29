@@ -18,7 +18,6 @@ export function ConnectionHome({
     const [connectionString, setConnectionString] = useState("")
     const [tlsCertificatePath, setTlsCertificatePath] = useState("")
     const [saving, setSaving] = useState(false)
-    const [deletingId, setDeletingId] = useState<string | null>(null)
     const [localError, setLocalError] = useState<string | null>(null)
 
     const handleAddConnection = async (event: SubmitEvent<HTMLFormElement>) => {
@@ -30,7 +29,7 @@ export function ConnectionHome({
             let certPathToSave = tlsCertificatePath || undefined;
             // Only upload if certPath is set and not already in app storage
             if (tlsCertificatePath && !/storage[\\/]+certificates/.test(tlsCertificatePath)) {
-                certPathToSave = await mongoViewer.persistTlsCertificate(tlsCertificatePath);
+                certPathToSave = (await mongoViewer.persistTlsCertificate(tlsCertificatePath)) ?? undefined;
             }
             await onSaveConnection({
                 name,
@@ -50,7 +49,6 @@ export function ConnectionHome({
     }
 
     const handleDelete = async (connectionId: string) => {
-        setDeletingId(connectionId)
         setLocalError(null)
 
         try {
@@ -58,8 +56,6 @@ export function ConnectionHome({
         } catch (deleteError) {
             const message = deleteError instanceof Error ? deleteError.message : "Unable to delete connection"
             setLocalError(message)
-        } finally {
-            setDeletingId(null)
         }
     }
 

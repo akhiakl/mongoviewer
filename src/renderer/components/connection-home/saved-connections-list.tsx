@@ -23,7 +23,7 @@ export function SavedConnectionsList({
     const { connections } = connectionsState;
 
     return (
-        <div className="flex-1 overflow-y-auto bg-background rounded-ss-[1rem]">
+        <div className="flex-1 overflow-y-auto rounded-ss-[1rem] bg-background">
             <div className="p-6">
                 <div className="space-y-6">
                     <div>

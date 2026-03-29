@@ -24,6 +24,7 @@ declare global {
             getCollectionStats(query: DocumentsQuery): Promise<CollectionStats>;
             getCollectionSchemaSummary(query: DocumentsQuery): Promise<CollectionSchemaSummary>;
             pickTlsCertificate(): Promise<string | null>;
+            setThemePreference(themePreference: 'system' | 'light' | 'dark'): Promise<void>;
         };
     }
 }

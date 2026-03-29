@@ -159,7 +159,7 @@ export async function listCollectionIndexes(
   const indexes = await collection.indexes();
 
   return indexes.map((index) => ({
-    name: index.name,
+    name: index.name ?? '(unnamed index)',
     fields: Object.entries(index.key).map(([field, direction]) => `${field} (${direction})`),
     unique: Boolean(index.unique),
     sparse: Boolean(index.sparse),

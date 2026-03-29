@@ -1,4 +1,4 @@
-import { IpcInvokeMap } from '@/core/ipc-types';
+import type { IpcInvokeMap } from '@/core/ipc-types';
 import { ipcRenderer } from 'electron';
 
 export function invoke<K extends keyof IpcInvokeMap>(
@@ -7,4 +7,3 @@ export function invoke<K extends keyof IpcInvokeMap>(
 ): Promise<IpcInvokeMap[K]['return']> {
     return ipcRenderer.invoke(channel, ...args);
 }
-

@@ -29,7 +29,7 @@ import {
     validateDocumentsQuery,
 } from '../input-validators';
 
-import { IpcHandlerMap } from '@/shared/types';
+import type { IpcHandlerMap } from '@/shared/types';
 import { buildMongoConnectionString } from '../mongo-connection';
 
 async function getConnectionUri(connectionId: string) {

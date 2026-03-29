@@ -1,6 +1,6 @@
 import { contextBridge } from 'electron';
 import { invoke } from './ipc';
-import { DocumentsQuery, SaveConnectionInput } from '@/shared/mongo-types';
+import type { DocumentsQuery, SaveConnectionInput } from '@/shared/mongo-types';
 
 export const api = {
     platform: process.platform,
@@ -37,6 +37,9 @@ export const api = {
 
     persistTlsCertificate: (path: string) =>
         invoke('dialog:persist-tls-certificate', path),
+
+    setThemePreference: (themePreference: 'system' | 'light' | 'dark') =>
+        invoke('window:set-theme-preference', themePreference),
 
 };
 

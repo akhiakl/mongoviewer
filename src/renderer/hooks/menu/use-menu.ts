@@ -1,11 +1,10 @@
-import { useState, useCallback } from 'react';
+import { useCallback } from 'react';
 import { useConnectionMenu } from './use-connection-menu';
 import { useViewMenu } from './use-view-menu';
 import { useEditMenu } from './use-edit-menu';
 import { useHelpMenu } from './use-help-menu';
 
 export const useMenu = () => {
-    const [darkTheme, setDarkTheme] = useState(false);
     const {
         openConnection,
         saveCurrentConnection,
@@ -23,7 +22,6 @@ export const useMenu = () => {
     const exportCollection = useCallback(() => {/* TODO: Export collection logic */ }, []);
     const importCollection = useCallback(() => {/* TODO: Import collection logic */ }, []);
     const preferences = useCallback(() => {/* TODO: Preferences logic */ }, []);
-    const toggleDarkTheme = useCallback(() => setDarkTheme((v) => !v), []);
     return {
         openConnection,
         saveConnection,
@@ -41,8 +39,6 @@ export const useMenu = () => {
         toggleSidebar,
         showQueryHistory,
         showSchemaPanel,
-        darkTheme,
-        toggleDarkTheme,
         openSavedConnection,
         saveCurrentConnection,
         renameConnection,
